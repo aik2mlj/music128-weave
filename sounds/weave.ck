@@ -24,6 +24,9 @@ scales.majorScale @=> provider.notes;
 6 => int CHANNELS;
 0 => int CHAN_OFFSET;
 
+0.01 => float LINE_WIDTH;
+@(0.2, 0.2, 0.2) => vec3 LINE_COLOR;
+
 -2 * 16 / 9 => float MIN_X;
 2 * 16 / 9 => float MAX_X;
 -2 => float MIN_Y;
@@ -39,6 +42,8 @@ class Thread {
     rev.mix(0.1);
     env.set(300::ms, 500::ms, 0.2, 400::ms);
 
+    Shred @animateShred;
+
     fun void connect2dac(int chan) { rev => dac.chan(chan); }
 
     fun float gain() { return osc.gain(); }
@@ -49,7 +54,11 @@ class Thread {
 
     fun void on() { env.keyOn(); }
     fun int isOn() { return env.value() > 0.; }
-    fun void off() { env.keyOff(); }
+    fun void off() {
+        env.keyOff();
+        if (animateShred != null)
+            animateShred.exit();
+    }
 }
 
 Thread threads[CHANNELS];
@@ -83,10 +92,11 @@ State.NONE => int stateY;
 0 => int threadNum;
 
 
-fun addLine(int direction) {
+fun addLine(int direction, Thread @thread) {
     GLines line --> GG.scene();
-    line.color(Color.WHITE);
-    line.width(0.01);
+
+    line.color(LINE_COLOR);
+    line.width(LINE_WIDTH);
 
     if (direction == 0) {
         line.posY(gt2y(gt.axis[2]));
@@ -94,6 +104,12 @@ fun addLine(int direction) {
         line.posX(gt2x(gt.axis[5]));
     }
 
+    spork ~ drawLine(direction, line);
+    spork ~ animate(line) @=> Shred @animateShred;
+    animateShred @=> thread.animateShred;
+}
+
+fun void drawLine(int direction, GLines @line) {
     now => time start;
     0.5::second => dur transTime;
     while (now - start < transTime) {
@@ -107,10 +123,27 @@ fun addLine(int direction) {
     }
 }
 
+fun void animate(GLines @line) {
+    now => time t0;
+    1 => float speed;
+    0.2 => float dcolor;
+    while (true) {
+        GG.nextFrame() => now;
+        (now - t0) / 1::second => float t;
+        <<< t >>>;
+        Math.sin(t * speed * 5) => float inc;
+        LINE_WIDTH + inc * 0.005 => line.width;
+        @(LINE_COLOR.x + (inc + Math.randomf()) * dcolor,
+          LINE_COLOR.y + (inc + Math.randomf()) * dcolor,
+          LINE_COLOR.z + (inc + Math.randomf()) * dcolor) => line.color;
+    }
+}
+
 fun void addThread(int direction) {
     threads[threadNum++ % CHANNELS] @=> Thread thread;
-    if (thread.isOn())
+    if (thread.isOn()) {
         thread.off();
+    }
 
     int note;
     if (direction == 0)
@@ -122,7 +155,7 @@ fun void addThread(int direction) {
 
     thread.freq(freq);
 
-    spork ~ addLine(direction);
+    addLine(direction, thread);
     thread.on();
     <<< "thread added:", threadNum >>>;
 }
