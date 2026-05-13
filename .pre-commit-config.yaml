@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: chuckfmt
+        name: chuckfmt
+        entry: chuckfmt -i
+        language: system
+        files: \.ck$
