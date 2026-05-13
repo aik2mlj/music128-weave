@@ -6,9 +6,9 @@
 @import "../lib/global.ck"
 
 GWindow.title("weave");
-GWindow.windowed(1280, 960);
-GWindow.center();
-// GWindow.fullscreen();
+// GWindow.windowed(1280, 960);
+// GWindow.center();
+GWindow.fullscreen();
 
 NoteProvider provider;
 BPM bpm;
@@ -23,18 +23,35 @@ scales.majorScale @=> provider.notes;
 // one person can weave up to six threads (one hemi)
 6 => int CHANNELS;
 0 => int CHAN_OFFSET;
-TriOsc thread[CHANNELS];
-LPF threadLPF[CHANNELS];
-ADSR env[CHANNELS];
-NRev threadRev[CHANNELS];
 
-// set parameters — nothing patched to dac yet
-for (int i; i < CHANNELS; i++) {
-    thread[i].gain(0.05); // a low gain
-    threadLPF[i].set(800, 1);
-    threadRev[i].gain(0.5);
-    threadRev[i].mix(0.1);
-    (30::ms, 500::ms, 0, 400::ms) => env[i].set;
+-2 => int MIN_Y;
+2 => int MAX_Y;
+fun float gt2y(float x) { return Math.map2(x, 0., 1., MIN_Y, MAX_Y); }
+
+class Thread {
+    TriOsc osc => ADSR env => LPF lpf => NRev rev;
+    osc.gain(0.5);
+    lpf.set(800, 1);
+    rev.gain(0.5);
+    rev.mix(0.1);
+    env.set(300::ms, 500::ms, 0.2, 400::ms);
+
+    fun void connect2dac(int chan) { rev => dac.chan(chan); }
+
+    fun float gain() { return osc.gain(); }
+    fun void gain(float g) { osc.gain(g); }
+
+    fun float freq() { return osc.freq(); }
+    fun void freq(float f) { osc.freq(f); }
+
+    fun void on() { env.keyOn(); }
+    fun int isOn() { return env.value() > 0.; }
+    fun void off() { env.keyOff(); }
+}
+
+Thread threads[CHANNELS];
+for (0 => int i; i < CHANNELS; ++i) {
+    threads[i].connect2dac(i);
 }
 
 1::second => now;
@@ -69,47 +86,29 @@ fun addLine() {
 
     vec2 pts[2];
     @(-5.0, 0.0) => pts[0];
-    @(0.0, 0.0) => pts[1];
+    @(5, 0.0) => pts[1];
     line.positions(pts);
-    line.posY(gt.axis[2]); // fix it there
+    line.posY(gt2y(gt.axis[2])); // fix it there
 
     while (true) {
         GG.nextFrame() => now;
     }
 }
 
-fun void easeIn(int num) {
-    while (true) {
-        // check left tether x -- slowly weave in the sound
-        Math.max(0.0, -gt.axis[0]) / 2.0 => float newGain;
-        // only update toward louder
-        if (newGain > thread[num].gain()) {
-            newGain => thread[num].gain;
-            <<< "check gain level ", thread[num].gain(), " num: ", num >>>;
-        }
-        10::ms => now;
-    }
-}
-
 fun void addThread() {
-    if (threadNum < CHANNELS) {
-        thread[threadNum] => threadLPF[threadNum] => threadRev[threadNum] => dac;
+    threads[threadNum++ % CHANNELS] @=> Thread thread;
+    if (thread.isOn())
+        thread.off();
 
+    provider.getNote(gt.axis[2]) => int note;
+    // convert it to freq, starting from C
+    Std.mtof(48 + note) => float freq;
 
-        // figure out the interval length
-        Math.floor((gt.axis[2]) * provider.notes.size()) $ int => int idx;
-        // watch boundary
-        if (idx >= provider.notes.size())
-            provider.notes.size() - 1 => idx;
-        // convert it to freq, starting from C
-        Std.mtof(60 + provider.notes[idx]) => float freq;
-        thread[threadNum].freq(freq);
+    thread.freq(freq);
 
-        spork ~ easeIn(threadNum);
-        spork ~ addLine();
-        threadNum++;
-        <<< "thread added:", threadNum >>>;
-    }
+    spork ~ addLine();
+    thread.on();
+    <<< "thread added:", threadNum >>>;
 }
 
 fun void stateHandler() {
@@ -151,7 +150,7 @@ fun void print() {
         100::ms => now;
     }
 }
-spork ~ print();
+// spork ~ print();
 
 
 // main loop
