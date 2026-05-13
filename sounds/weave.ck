@@ -24,9 +24,12 @@ scales.majorScale @=> provider.notes;
 6 => int CHANNELS;
 0 => int CHAN_OFFSET;
 
--2 => int MIN_Y;
-2 => int MAX_Y;
-fun float gt2y(float x) { return Math.map2(x, 0., 1., MIN_Y, MAX_Y); }
+-2 * 16 / 9 => float MIN_X;
+2 * 16 / 9 => float MAX_X;
+-2 => float MIN_Y;
+2 => float MAX_Y;
+fun float gt2x(float gt) { return Math.map2(gt, 0., 1., MIN_X, MAX_X); }
+fun float gt2y(float gt) { return Math.map2(gt, 0., 1., MIN_Y, MAX_Y); }
 
 class Thread {
     TriOsc osc => ADSR env => LPF lpf => NRev rev;
@@ -71,7 +74,8 @@ public class State {
     3 => static int CENTER;
 }
 
-State.NONE => int state;
+State.NONE => int stateX;
+State.NONE => int stateY;
 
 // the state within this round of weaving.
 // 0 = none, 1 = left seen, 2 = center seen, 3 = right seen
@@ -79,42 +83,53 @@ State.NONE => int state;
 0 => int threadNum;
 
 
-fun addLine() {
+fun addLine(int direction) {
     GLines line --> GG.scene();
     line.color(Color.WHITE);
     line.width(0.01);
 
     vec2 pts[2];
-    @(-5.0, 0.0) => pts[0];
-    @(5, 0.0) => pts[1];
-    line.positions(pts);
-    line.posY(gt2y(gt.axis[2])); // fix it there
+    if (direction == 0) {
+        @(-5.0, 0.0) => pts[0];
+        @(5, 0.0) => pts[1];
+        line.positions(pts);
+        line.posY(gt2y(gt.axis[2]));
+    } else {
+        @(0.0, -5.0) => pts[0];
+        @(0.0, 5.0) => pts[1];
+        line.positions(pts);
+        line.posX(gt2x(gt.axis[5]));
+    }
 
     while (true) {
         GG.nextFrame() => now;
     }
 }
 
-fun void addThread() {
+fun void addThread(int direction) {
     threads[threadNum++ % CHANNELS] @=> Thread thread;
     if (thread.isOn())
         thread.off();
 
-    provider.getNote(gt.axis[2]) => int note;
+    int note;
+    if (direction == 0)
+        provider.getNote(gt.axis[2]) => note;
+    else
+        provider.getNote(gt.axis[5]) => note;
     // convert it to freq, starting from C
     Std.mtof(48 + note) => float freq;
 
     thread.freq(freq);
 
-    spork ~ addLine();
+    spork ~ addLine(direction);
     thread.on();
     <<< "thread added:", threadNum >>>;
 }
 
 fun void stateHandler() {
     while (true) {
+        // X
         State.NONE => int newState;
-
         if (gt.axis[0] < -0.05)
             State.LEFT => newState;
         else if (gt.axis[0] > 0.05)
@@ -123,17 +138,42 @@ fun void stateHandler() {
             State.CENTER => newState;
 
         // only act on state transitions
-        if (newState != state) {
-            newState => state;
+        if (newState != stateX) {
+            newState => stateX;
 
-            if (state == State.LEFT && roundStage == 0)
+            if (stateX == State.LEFT && roundStage == 0)
                 1 => roundStage;
-            else if (state == State.CENTER && roundStage == 1)
+            else if (stateX == State.CENTER && roundStage == 1)
                 2 => roundStage;
-            else if (state == State.RIGHT && roundStage == 2)
+            else if (stateX == State.RIGHT && roundStage == 2)
                 3 => roundStage;
-            else if (state == State.CENTER && roundStage == 3) {
-                addThread();
+            else if (stateX == State.CENTER && roundStage == 3) {
+                addThread(0);
+                0 => roundStage;
+            }
+        }
+
+        // Y
+        State.NONE => newState;
+        if (gt.axis[4] < -0.05)
+            State.LEFT => newState;
+        else if (gt.axis[4] > 0.05)
+            State.RIGHT => newState;
+        else
+            State.CENTER => newState;
+
+        // only act on state transitions
+        if (newState != stateY) {
+            newState => stateY;
+
+            if (stateY == State.LEFT && roundStage == 0)
+                1 => roundStage;
+            else if (stateY == State.CENTER && roundStage == 1)
+                2 => roundStage;
+            else if (stateY == State.RIGHT && roundStage == 2)
+                3 => roundStage;
+            else if (stateY == State.CENTER && roundStage == 3) {
+                addThread(1);
                 0 => roundStage;
             }
         }
