@@ -88,21 +88,22 @@ fun addLine(int direction) {
     line.color(Color.WHITE);
     line.width(0.01);
 
-    vec2 pts[2];
     if (direction == 0) {
-        @(-5.0, 0.0) => pts[0];
-        @(5, 0.0) => pts[1];
-        line.positions(pts);
         line.posY(gt2y(gt.axis[2]));
     } else {
-        @(0.0, -5.0) => pts[0];
-        @(0.0, 5.0) => pts[1];
-        line.positions(pts);
         line.posX(gt2x(gt.axis[5]));
     }
 
-    while (true) {
+    now => time start;
+    0.5::second => dur transTime;
+    while (now - start < transTime) {
         GG.nextFrame() => now;
+        (now - start) / transTime => float t;
+        if (direction == 0) {
+            line.positions([@(5, 0), @(5 - t * 10, 0)]);
+        } else {
+            line.positions([@(0, 5), @(0, 5 - t * 10)]);
+        }
     }
 }
 
