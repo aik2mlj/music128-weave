@@ -16,6 +16,9 @@ BPM bpm;
 Chords chords;
 Scales scales;
 
+bpm.tempo(80);
+bpm.quarterNote => dur sync;
+
 // Globals
 Global.gt @=> GameTrak @gt;
 
@@ -40,7 +43,7 @@ Thread threads[CHANNELS];
 
 for (0 => int i; i < CHANNELS; ++i) {
     threads[i].connect2dac(i);
-    threads[i].init(SinOsc sin);
+    threads[i].init(TriOsc osc);
 }
 
 1::second => now;
@@ -51,22 +54,6 @@ for (0 => int i; i < CHANNELS; ++i) {
 // 3: right handle's x
 // 4: right handle's y
 // 5: right handle's z
-
-
-public class State {
-    0 => static int NONE;
-    1 => static int LEFT;
-    2 => static int RIGHT;
-    3 => static int CENTER;
-}
-
-State.NONE => int stateX;
-State.NONE => int stateY;
-
-// the state within this round of weaving.
-// 0 = none, 1 = left seen, 2 = center seen, 3 = right seen
-0 => int roundStage;
-0 => int threadNum;
 
 
 fun addLine(int direction, Thread @thread) {
@@ -82,7 +69,7 @@ fun addLine(int direction, Thread @thread) {
     }
 
     spork ~ drawLine(direction, line);
-    spork ~ animate(line) @=> Shred @animateShred;
+    spork ~ animate(line, sync) @=> Shred @animateShred;
     animateShred @=> thread.animateShred;
 }
 
@@ -100,9 +87,9 @@ fun void drawLine(int direction, GLines @line) {
     }
 }
 
-fun void animate(GLines @line) {
+fun void animate(GLines @line, dur beatLen) {
     now => time t0;
-    1 => float speed;
+    (2 * Math.PI) / (10 * (beatLen / 1::second)) => float speed;
     0.2 => float dcolor;
     while (true) {
         GG.nextFrame() => now;
@@ -138,7 +125,7 @@ fun void addThread(int direction) {
     thread.freq(Std.mtof(48 + note));
 
     addLine(direction, thread);
-    thread.on();
+    spork ~ thread.rhythmicPause(sync);
     <<< "thread added:", threadNum >>>;
 }
 
@@ -181,6 +168,22 @@ fun void chordSequencer() {
 }
 
 spork ~ chordSequencer();
+
+
+public class State {
+    0 => static int NONE;
+    1 => static int LEFT;
+    2 => static int RIGHT;
+    3 => static int CENTER;
+}
+
+State.NONE => int stateX;
+State.NONE => int stateY;
+
+// the state within this round of weaving.
+// 0 = none, 1 = left seen, 2 = center seen, 3 = right seen
+0 => int roundStage;
+0 => int threadNum;
 
 
 fun void stateHandler() {
@@ -247,7 +250,7 @@ fun void print() {
         100::ms => now;
     }
 }
-spork ~ print();
+// spork ~ print();
 
 
 // main loop

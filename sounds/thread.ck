@@ -1,6 +1,12 @@
+@import "bpm.ck"
+
+
 public class Thread {
+
     // here osc means oscillator
     Osc @osc;
+
+    BPM bpm;
 
     ADSR env => LPF lpf => NRev rev;
     lpf.set(800, 1);
@@ -18,6 +24,7 @@ public class Thread {
         osc.gain(0.5);
     }
 
+
     fun void connect2dac(int chan) { rev => dac.chan(chan % dac.channels()); }
 
     //    fun void connect2dac(int chan) { rev => dac.chan(chan); }
@@ -34,5 +41,16 @@ public class Thread {
         env.keyOff();
         if (animateShred != null)
             animateShred.exit();
+    }
+
+    // using LFO maybe a smarter way
+    // but then also how do you control the rate?
+    fun void rhythmicPause(dur length) {
+        while (true) {
+            env.keyOn();
+            length => now;
+            env.keyOff();
+            length => now;
+        }
     }
 }
