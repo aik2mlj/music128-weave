@@ -11,6 +11,11 @@ GWindow.title("weave");
 // GWindow.center();
 GWindow.fullscreen();
 
+GG.bloom(true);
+GG.bloomPass().intensity(0.5);
+GG.bloomPass().radius(0.7);
+GG.bloomPass().levels(9);
+
 NoteProvider provider;
 BPM bpm;
 Chords chords;
@@ -129,6 +134,7 @@ fun void addThread(int direction) {
     <<< "thread added:", threadNum >>>;
 }
 
+/// ---------- CHORD ---------- /////
 // default chord
 chords.c_major @=> provider.notes;
 
@@ -169,7 +175,7 @@ fun void chordSequencer() {
 
 spork ~ chordSequencer();
 
-
+/// ---------- STATE ---------- /////
 public class State {
     0 => static int NONE;
     1 => static int LEFT;
