@@ -4,6 +4,7 @@
 @import "scales.ck"
 @import "../lib/gametrak.ck"
 @import "../lib/global.ck"
+@import "thread.ck"
 
 GWindow.title("weave");
 // GWindow.windowed(1280, 960);
@@ -18,7 +19,6 @@ Scales scales;
 // Globals
 Global.gt @=> GameTrak @gt;
 
-scales.majorScale @=> provider.notes;
 
 // one person can weave up to six threads (one hemi)
 6 => int CHANNELS;
@@ -34,33 +34,8 @@ scales.majorScale @=> provider.notes;
 fun float gt2x(float gt) { return Math.map2(gt, 0., 1., MIN_X, MAX_X); }
 fun float gt2y(float gt) { return Math.map2(gt, 0., 1., MIN_Y, MAX_Y); }
 
-class Thread {
-    TriOsc osc => ADSR env => LPF lpf => NRev rev;
-    osc.gain(0.5);
-    lpf.set(800, 1);
-    rev.gain(0.5);
-    rev.mix(0.1);
-    env.set(300::ms, 500::ms, 0.2, 400::ms);
 
-    Shred @animateShred;
-
-    fun void connect2dac(int chan) { rev => dac.chan(chan); }
-
-    fun float gain() { return osc.gain(); }
-    fun void gain(float g) { osc.gain(g); }
-
-    fun float freq() { return osc.freq(); }
-    fun void freq(float f) { osc.freq(f); }
-
-    fun void on() { env.keyOn(); }
-    fun int isOn() { return env.value() > 0.; }
-    fun void off() {
-        env.keyOff();
-        if (animateShred != null)
-            animateShred.exit();
-    }
-}
-
+// instantiate sound threads
 Thread threads[CHANNELS];
 for (0 => int i; i < CHANNELS; ++i) {
     threads[i].connect2dac(i);
@@ -145,20 +120,68 @@ fun void addThread(int direction) {
         thread.off();
     }
 
+    float pos; // pos to be stored and thus can be reinterpreted during chord change
     int note;
-    if (direction == 0)
-        provider.getNote(gt.axis[2]) => note;
-    else
-        provider.getNote(gt.axis[5]) => note;
-    // convert it to freq, starting from C
-    Std.mtof(48 + note) => float freq;
 
-    thread.freq(freq);
+    if (direction == 0) // horizontal
+        gt.axis[2] => pos;
+    else // vertical
+        gt.axis[5] => pos;
+
+    pos => thread.pos;
+
+    provider.getNote(pos) => note;
+
+    // convert it to freq, starting from C
+    thread.freq(Std.mtof(48 + note));
 
     addLine(direction, thread);
     thread.on();
     <<< "thread added:", threadNum >>>;
 }
+
+// default chord
+chords.c_major@=> provider.notes;
+
+// for changing the entire chord/ scale scope
+fun void chordChanger(int input[]){
+    input @=> provider.notes;
+
+        // search for existing threads
+        for (0 => int i; i < CHANNELS; i++){
+            if (threads[i].isOn()){
+                // update the frequency
+                threads[i].freq(Std.mtof(48 + provider.getNote(threads[i].pos)));
+            }
+        }
+    
+}
+
+// for adding new chord on the context of existing chord(s)
+fun void chordAdder(int input[]){
+    input @=> provider.notes;
+}
+
+
+fun void chordSequencer() {
+    0 => int step;
+    while (true) {
+        if (gt.buttonPressed) {
+            if (step == 0)      chordChanger(chords.d_minor);
+            else if (step == 1) chordAdder(chords.e_minor);
+            else if (step == 2) chordChanger(chords.f_minor);
+
+
+
+            // loop for now
+            (step + 1) % 3 => step;
+        }
+        10::ms => now;
+    }
+}
+
+spork ~ chordSequencer();
+
 
 fun void stateHandler() {
     while (true) {
@@ -224,7 +247,7 @@ fun void print() {
         100::ms => now;
     }
 }
-// spork ~ print();
+spork ~ print();
 
 
 // main loop
