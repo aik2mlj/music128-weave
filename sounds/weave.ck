@@ -94,13 +94,13 @@ fun void drawLine(int direction, GLines @line) {
 
 fun void animate(GLines @line, dur beatLen) {
     now => time t0;
-    (2 * Math.PI) / (10 * (beatLen / 1::second)) => float speed;
+    (Math.PI) / (beatLen / 1::second) => float speed;
     0.2 => float dcolor;
     while (true) {
         GG.nextFrame() => now;
         (now - t0) / 1::second => float t;
         <<< t >>>;
-        Math.sin(t * speed * 5) => float inc;
+        Math.sin(t * speed) => float inc;
         LINE_WIDTH + inc * 0.005 => line.width;
         @(LINE_COLOR.x + (inc + Math.randomf()) * dcolor,
           LINE_COLOR.y + (inc + Math.randomf()) * dcolor,
