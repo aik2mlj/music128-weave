@@ -5,7 +5,7 @@ public class NoteProvider {
     0 => static int position;
 
     fun int size() { return octaves * notes.size(); }
-    
+
     fun int getNote(float x) {
         // x in [0, 1)
         // return the closest note for a given x

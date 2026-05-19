@@ -143,35 +143,35 @@ fun void addThread(int direction) {
 }
 
 // default chord
-chords.c_major@=> provider.notes;
+chords.c_major @=> provider.notes;
 
 // for changing the entire chord/ scale scope
-fun void chordChanger(int input[]){
+fun void chordChanger(int input[]) {
     input @=> provider.notes;
 
-        // search for existing threads
-        for (0 => int i; i < CHANNELS; i++){
-            if (threads[i].isOn()){
-                // update the frequency
-                threads[i].freq(Std.mtof(48 + provider.getNote(threads[i].pos)));
-            }
+    // search for existing threads
+    for (0 => int i; i < CHANNELS; i++) {
+        if (threads[i].isOn()) {
+            // update the frequency
+            threads[i].freq(Std.mtof(48 + provider.getNote(threads[i].pos)));
         }
-    
+    }
 }
 
 // for adding new chord on the context of existing chord(s)
-fun void chordAdder(int input[]){
-    input @=> provider.notes;
-}
+fun void chordAdder(int input[]) { input @=> provider.notes; }
 
 
 fun void chordSequencer() {
     0 => int step;
     while (true) {
         if (gt.buttonPressed) {
-            if (step == 0)    chordChanger(chords.d_minor);
-            else if (step == 1) chordAdder(chords.e_minor);
-            else if (step == 2) chordChanger(chords.f_minor);
+            if (step == 0)
+                chordChanger(chords.d_minor);
+            else if (step == 1)
+                chordAdder(chords.e_minor);
+            else if (step == 2)
+                chordChanger(chords.f_minor);
 
             // loop for now
             (step + 1) % 3 => step;

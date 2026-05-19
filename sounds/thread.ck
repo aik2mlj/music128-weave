@@ -1,7 +1,6 @@
-
 public class Thread {
     // here osc means oscillator
-    Osc @ osc;
+    Osc @osc;
 
     ADSR env => LPF lpf => NRev rev;
     lpf.set(800, 1);
@@ -15,7 +14,7 @@ public class Thread {
 
     fun void init(Osc timbre) {
         timbre @=> osc;
-        osc => env; 
+        osc => env;
         osc.gain(0.5);
     }
 
@@ -36,5 +35,4 @@ public class Thread {
         if (animateShred != null)
             animateShred.exit();
     }
-
 }
