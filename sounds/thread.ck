@@ -1,8 +1,9 @@
 
 public class Thread {
     // here osc means oscillator
-    SinOsc osc => ADSR env => LPF lpf => NRev rev;
-    osc.gain(0.5);
+    Osc @ osc;
+
+    ADSR env => LPF lpf => NRev rev;
     lpf.set(800, 1);
     rev.gain(0.5);
     rev.mix(0.1);
@@ -11,6 +12,12 @@ public class Thread {
     Shred @animateShred;
 
     float pos;
+
+    fun void init(Osc timbre) {
+        timbre @=> osc;
+        osc => env; 
+        osc.gain(0.5);
+    }
 
     fun void connect2dac(int chan) { rev => dac.chan(chan % dac.channels()); }
 

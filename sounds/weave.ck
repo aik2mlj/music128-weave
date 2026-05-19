@@ -37,8 +37,10 @@ fun float gt2y(float gt) { return Math.map2(gt, 0., 1., MIN_Y, MAX_Y); }
 
 // instantiate sound threads
 Thread threads[CHANNELS];
+
 for (0 => int i; i < CHANNELS; ++i) {
     threads[i].connect2dac(i);
+    threads[i].init(SinOsc sin);
 }
 
 1::second => now;
@@ -167,11 +169,9 @@ fun void chordSequencer() {
     0 => int step;
     while (true) {
         if (gt.buttonPressed) {
-            if (step == 0)      chordChanger(chords.d_minor);
+            if (step == 0)    chordChanger(chords.d_minor);
             else if (step == 1) chordAdder(chords.e_minor);
             else if (step == 2) chordChanger(chords.f_minor);
-
-
 
             // loop for now
             (step + 1) % 3 => step;
