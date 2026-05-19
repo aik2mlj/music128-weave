@@ -23,6 +23,7 @@ Scales scales;
 
 bpm.tempo(80);
 bpm.quarterNote => dur sync;
+2 * sync => dur cycle;
 
 // Globals
 Global.gt @=> GameTrak @gt;
@@ -61,6 +62,7 @@ for (0 => int i; i < CHANNELS; ++i) {
 // 5: right handle's z
 
 
+/// ---------- VISUAL ---------- /////
 fun addLine(int direction, Thread @thread) {
     GLines line --> GG.scene();
 
@@ -74,7 +76,7 @@ fun addLine(int direction, Thread @thread) {
     }
 
     spork ~ drawLine(direction, line);
-    spork ~ animate(line, sync) @=> Shred @animateShred;
+    spork ~ animate(line) @=> Shred @animateShred;
     animateShred @=> thread.animateShred;
 }
 
@@ -92,9 +94,10 @@ fun void drawLine(int direction, GLines @line) {
     }
 }
 
-fun void animate(GLines @line, dur beatLen) {
+fun void animate(GLines @line) {
     now => time t0;
-    (Math.PI) / (beatLen / 1::second) => float speed;
+    // (2 * Math.PI) / (10 * (beatLen / 1::second)) => float speed;
+    1 => float speed;
     0.2 => float dcolor;
     while (true) {
         GG.nextFrame() => now;
@@ -105,6 +108,58 @@ fun void animate(GLines @line, dur beatLen) {
         @(LINE_COLOR.x + (inc + Math.randomf()) * dcolor,
           LINE_COLOR.y + (inc + Math.randomf()) * dcolor,
           LINE_COLOR.z + (inc + Math.randomf()) * dcolor) => line.color;
+    }
+}
+
+/// ---------- RHYTHM ---------- /////
+
+float vertPositions[CHANNELS];  // world-space x of for vertical lines
+float horizPositions[CHANNELS]; // for horizontal lines
+0 => int vertCount;
+0 => int horizCount;
+
+fun dur[] computeSegments(float positions[], int count) {
+    float bounds[count + 2]; // line locations including the outbounds
+
+    MIN_X => bounds[0];
+    MAX_X => bounds[count + 1];
+
+    for (0 => int i; i < count; i++)
+        positions[i] => bounds[i + 1];
+
+    // insertion sort line locations
+    for (1 => int i; i < bounds.size(); i++) {
+        bounds[i] => float key;
+        i - 1 => int j;
+        while (j >= 0 && bounds[j] > key) {
+            bounds[j] => bounds[j + 1];
+            j--;
+        }
+        key => bounds[j + 1];
+    }
+
+    MAX_X - MIN_X => float totalWidth;
+    dur segments[count + 1];
+    // find the dur of each segment
+    for (0 => int i; i < segments.size(); i++)
+        ((bounds[i + 1] - bounds[i]) / totalWidth) * cycle => segments[i];
+    return segments;
+}
+
+fun void updateExistingRhythms() {
+    for (0 => int i; i < CHANNELS; i++) {
+        if (!threads[i].isOn())
+            continue;
+
+        dur segs[];
+        if (threads[i].direction == 0)
+            computeSegments(vertPositions, vertCount) @=> segs;
+        else
+            computeSegments(horizPositions, horizCount) @=> segs;
+        if (threads[i].rhythmShred != null)
+            threads[i].rhythmShred.exit();
+
+        spork ~ threads[i].rhythmicPause(segs) @=> threads[i].rhythmShred;
     }
 }
 
@@ -123,6 +178,7 @@ fun void addThread(int direction) {
         gt.axis[5] => pos;
 
     pos => thread.pos;
+    direction => thread.direction;
 
     provider.getNote(pos) => note;
 
@@ -130,9 +186,27 @@ fun void addThread(int direction) {
     thread.freq(Std.mtof(48 + note));
 
     addLine(direction, thread);
-    spork ~ thread.rhythmicPause(sync);
-    <<< "thread added:", threadNum >>>;
+
+    if (direction == 0)
+        gt2y(thread.pos) => horizPositions[horizCount++];
+    else
+        gt2x(thread.pos) => vertPositions[vertCount++];
+
+    updateExistingRhythms();
+
+    // horizontal use vertCount;  otherwise the reverse
+    if ((direction == 0 ? vertCount : horizCount) == 0)
+        thread.on(); // sustain
+    else {           //
+        dur segs[];
+        if (direction == 0)
+            computeSegments(vertPositions, vertCount) @=> segs;
+        else
+            computeSegments(horizPositions, horizCount) @=> segs;
+        spork ~ thread.rhythmicPause(segs) @=> thread.rhythmShred;
+    }
 }
+
 
 /// ---------- CHORD ---------- /////
 // default chord
