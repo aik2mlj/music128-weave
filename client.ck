@@ -261,8 +261,9 @@ fun void chordSequencer() {
 
             // loop for now
             (step + 1) % 7 => step;
+
+            <<< "chord changed: ", step >>>;
         }
-        // <<< "step: ", step >>>;
         10::ms => now;
     }
 }
