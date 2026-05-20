@@ -48,6 +48,7 @@ OscMsg msg;
 6448 => oin.port;
 // create an address in the receiver, expect an int and a float
 oin.addAddress("/client/addline");
+oin.addAddress("/client/linepos");
 
 // OscOut multicast
 // multicast address sends to all machines on local network
