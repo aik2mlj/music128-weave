@@ -113,8 +113,8 @@ fun void animate(GLines @line) {
 
 /// ---------- RHYTHM ---------- /////
 
-float vertPositions[CHANNELS];  // world-space x of for vertical lines
-float horizPositions[CHANNELS]; // for horizontal lines
+float vertPositions[0];  // world-space x of for vertical lines
+float horizPositions[0]; // for horizontal lines
 0 => int vertCount;
 0 => int horizCount;
 
@@ -187,10 +187,13 @@ fun void addThread(int direction) {
 
     addLine(direction, thread);
 
-    if (direction == 0)
-        gt2y(thread.pos) => horizPositions[horizCount++];
-    else
-        gt2x(thread.pos) => vertPositions[vertCount++];
+    if (direction == 0) {
+        horizCount++;
+        horizPositions << gt2y(thread.pos);
+    } else {
+        vertCount++;
+        vertPositions << gt2x(thread.pos);
+    }
 
     updateExistingRhythms();
 
