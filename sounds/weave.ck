@@ -47,6 +47,7 @@ fun float gt2y(float gt) { return Math.map2(gt, 0., 1., MIN_Y, MAX_Y); }
 // instantiate sound threads
 Thread threads[CHANNELS];
 
+
 for (0 => int i; i < CHANNELS; ++i) {
     threads[i].connect2dac(i);
     if (i < 4) {
@@ -67,8 +68,20 @@ for (0 => int i; i < CHANNELS; ++i) {
 
 
 /// ---------- VISUAL ---------- /////
+
+// tracking lines
+GLines @allLines[0];
+float allLinePos[0];
+int allLineDir[0];
+
 fun addLine(int direction, Thread @thread) {
     GLines line --> GG.scene();
+
+    allLines << line;
+    // horizontal then use axis 2
+    gt.axis[direction == 0 ? 2 : 5] => float linePos;
+    allLinePos << linePos;
+    allLineDir << direction;
 
     line.color(LINE_COLOR);
     line.width(LINE_WIDTH);
@@ -157,8 +170,6 @@ fun void updateExistingRhythms() {
         dur segs[];
         if (threads[i].direction == 0) {
             computeSegments(vertPositions, vertCount) @=> segs;
-            <<< "vertical count for existing: ", vertCount >>>;
-            <<< "number of segments: ", segs.size() >>>;
         } else
             computeSegments(horizPositions, horizCount) @=> segs;
         if (threads[i].rhythmShred != null)
@@ -220,17 +231,50 @@ fun void addThread(int direction) {
 
 /// ---------- CHORD ---------- /////
 // for changing the entire chord/ scale scope
+
 fun void chordChanger(int input[]) {
+    provider.notes @=> int oldNotes[]; // save it！
     input @=> provider.notes;
 
-    // search for existing threads
+    // sonically
     for (0 => int i; i < CHANNELS; i++) {
         if (threads[i].isOn()) {
             // update the frequency
             threads[i].freq(Std.mtof(48 + provider.getNote(threads[i].pos)));
         }
     }
+
+    // visually, shift each line by its chord-tone delta
+    for (0 => int i; i < allLines.size(); i++) {
+        // get old slot position
+        Math.round(allLinePos[i] * oldNotes.size()) $ int => int idx;
+
+        // aka index 4 now should be index 3, if old chord has 5 notes, new has 4 notes
+        if (idx >= input.size())
+            input.size() - 1 => idx;
+
+        if (idx >= oldNotes.size())
+            oldNotes.size() - 1 => idx;
+
+
+        input[idx] - oldNotes[idx] => int semitoneShift;
+        // 12 semitones within one octave => compute the pos shift within this full range
+        semitoneShift * 1.0 / (provider.octaves * 12) => float posShift;
+
+        allLinePos[i] + posShift => float newPos;
+
+        // clamp
+        Math.max(0.0, Math.min(1.0, newPos)) => newPos;
+
+        newPos => allLinePos[i];
+
+        if (allLineDir[i] == 0)
+            allLines[i].posY(gt2y(newPos));
+        else
+            allLines[i].posX(gt2x(newPos));
+    }
 }
+
 
 // for adding new chord on the context of existing chord(s)
 fun void chordAdder(int input[]) { input @=> provider.notes; }
@@ -258,7 +302,7 @@ fun void chordSequencer() {
             // loop for now
             (step + 1) % 7 => step;
         }
-
+        <<< "step: ", step >>>;
         10::ms => now;
     }
 }
@@ -350,6 +394,8 @@ fun void keyboardHandler() {
             // fake a thread pos
             Math.randomf() => gt.axis[5];
             addThread(1);
+        } else if (UI.isKeyPressed(UI_Key.Space, false)) {
+            1 => gt.buttonPressed;
         }
     }
 }
