@@ -52,14 +52,15 @@ oin.addAddress("/client/linepos");
 
 // OscOut multicast
 // multicast address sends to all machines on local network
-"224.0.0.1" => string hostname;
+// "255.255.255.255" => string hostname;
+"localhost" => string hostname;
 // destination port number
 6449 => int port;
 // sender object
 OscOut xmit;
 // aim the transmitter at destination
 xmit.dest(hostname, port);
-// address that will send: /server/sync, /server/segXs, /server/segYs
+// address that will send: /server/sync, /server/segs
 
 /// ---------- VISUAL ---------- /////
 
@@ -68,6 +69,7 @@ MeshLines @allLines[16][0];
 
 // TODO: thread changes to an address sent from client
 fun addLine(int id, int direction, float pos, vec3 color) {
+    <<< "addline" >>>;
     MeshLines line --> GG.scene();
 
     allLines[id] << line;
@@ -165,6 +167,7 @@ fun dur[] computeSegments(float positions[], int count) {
 
 // TODO: change to sending osc to the corresponding client to start.
 fun void updateSegs() {
+    <<< "updateSegs" >>>;
     computeSegments(vertPositions, vertCount) @=> dur segXs[];
     computeSegments(horizPositions, horizCount) @=> dur segYs[];
 
@@ -173,6 +176,13 @@ fun void updateSegs() {
 }
 
 fun void sendRhythmSegs(dur segXs[], dur segYs[]) {
+    <<< "Sending rhythm segments", segXs.size(), segYs.size() >>>;
+    // <<< "segXs:" >>>;
+    // for (int n; n < segXs.size(); ++n)
+    //     <<< "\t", segXs[n] / 1::samp >>>;
+    // <<< "segYs:" >>>;
+    // for (int n; n < segYs.size(); ++n)
+    //     <<< "\t", segYs[n] / 1::samp >>>;
     xmit.start("/server/segs");
     segXs.size() => xmit.add; // number of elements
     segYs.size() => xmit.add; // number of elements

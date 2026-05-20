@@ -99,10 +99,16 @@ fun void serverListener() {
                 dur segXs[numX];
                 dur segYs[numY];
                 for (int n; n < numX; n++)
-                    msg.getFloat(n) * 1::samp => segXs[n];
+                    msg.getFloat(2 + n) * 1::samp => segXs[n];
                 for (int n; n < numY; n++)
-                    msg.getFloat(n) * 1::samp => segYs[n];
-                // FIXME:
+                    msg.getFloat(2 + numX + n) * 1::samp => segYs[n];
+                <<< "received segs: ", segXs.size(), segYs.size() >>>;
+                // <<< "segXs:" >>>;
+                // for (int n; n < numX; ++n)
+                //     <<< "\t", segXs[n] / 1::samp >>>;
+                // <<< "segYs:" >>>;
+                // for (int n; n < numY; ++n)
+                //     <<< "\t", segYs[n] / 1::samp >>>;
                 updateExistingRhythms(segXs, segYs);
             }
         }
@@ -112,6 +118,7 @@ spork ~ serverListener();
 /// ---------- RHYTHM ---------- /////
 
 fun void updateExistingRhythms(dur segXs[], dur segYs[]) {
+    <<< "updateExistingRhythms" >>>;
     for (0 => int i; i < CHANNELS; i++) {
         if (!threads[i].isOn())
             continue;
@@ -127,6 +134,7 @@ fun void updateExistingRhythms(dur segXs[], dur segYs[]) {
 }
 
 fun void addThread(int direction) {
+    <<< "addthread" >>>;
     threads[threadNum++ % CHANNELS] @=> Thread thread;
 
     if (thread.isOn()) {
@@ -153,15 +161,16 @@ fun void addThread(int direction) {
     // convert it to freq, starting from C
     thread.freq(Std.mtof(48 + note));
 
+    thread.on();
     sendAddLine(thread);
 
-    thread.on();
     // updateExistingRhythms();
 }
 
 fun void sendAddLine(Thread @thread) {
     // send an OSC message to the server
     // ID, direction, pos, color
+    <<< "sendAddline" >>>;
     xmit.start("/client/addline");
     ID => xmit.add;
     thread.direction => xmit.add;
