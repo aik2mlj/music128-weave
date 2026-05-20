@@ -44,8 +44,8 @@ public class Thread {
         env.keyOff();
         if (animateShred != null)
             animateShred.exit();
-        // if (rhythmShred != null)
-        //     rhythmShred.exit();
+        if (rhythmShred != null)
+            rhythmShred.exit();
     }
 
     // using LFO maybe a smarter way
