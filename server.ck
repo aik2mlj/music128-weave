@@ -2,8 +2,6 @@
 @import "sounds/bpm.ck"
 @import "sounds/chords.ck"
 @import "sounds/scales.ck"
-@import "lib/gametrak.ck"
-@import "lib/global.ck"
 @import "lib/meshlines.ck"
 @import "lib/lib.ck"
 @import "sounds/thread.ck"
