@@ -11,8 +11,8 @@ public class Thread {
     ADSR env => LPF lpf => NRev rev;
     lpf.set(800, 1);
     rev.gain(0.5);
-    rev.mix(0.1);
-    env.set(300::ms, 500::ms, 0.1, 400::ms);
+    rev.mix(0.2);
+    env.set(500::ms, 500::ms, 0.1, 10::ms);
 
     Shred @animateShred;
     Shred @rhythmShred;

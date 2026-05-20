@@ -19,7 +19,17 @@ public class Chords {
     [9, 12, 16] @=> static int a_minor[];
     [11, 14, 17] @=> static int b_dim[];
 
+
+    // addiitonal fancier chords
+    [-1, 6, 10, 13, 15] @=> static int b_maj9[];
+    [-6, 1, 8, 10, 5] @=> static int fsharp_maj9[];
+    [1, 4, 8, 11] @=> static int csharp_maj7[];
+    [-4, 3, 7, 10] @=> static int aflat_sus2[];
+    [-2, 3, 5, 8] @=> static int bflat_9sus4[];
+
     // additional sdm chords
+
+
     [1, 5, 8] @=> static int db_major[];
 
 

@@ -49,7 +49,11 @@ Thread threads[CHANNELS];
 
 for (0 => int i; i < CHANNELS; ++i) {
     threads[i].connect2dac(i);
-    threads[i].init(SawOsc osc);
+    if (i < 4) {
+        threads[i].init(TriOsc osc);
+    } else {
+        threads[i].init(SawOsc osc);
+    }
 }
 
 1::second => now;
@@ -215,9 +219,6 @@ fun void addThread(int direction) {
 
 
 /// ---------- CHORD ---------- /////
-// default chord
-chords.chordInverter(chords.c_major, 1, 1) @=> provider.notes;
-
 // for changing the entire chord/ scale scope
 fun void chordChanger(int input[]) {
     input @=> provider.notes;
@@ -240,15 +241,24 @@ fun void chordSequencer() {
     while (true) {
         if (gt.buttonPressed) {
             if (step == 0)
-                chordChanger(chords.d_minor);
+                chordChanger(chords.b_maj9);
             else if (step == 1)
-                chordAdder(chords.e_minor);
+                chordChanger(chords.fsharp_maj9);
             else if (step == 2)
-                chordChanger(chords.f_minor);
+                chordChanger(chords.csharp_maj7);
+            else if (step == 3)
+                chordChanger(chords.aflat_sus2);
+            else if (step == 4)
+                chordChanger(chords.bflat_9sus4);
+            else if (step == 5)
+                chordChanger(chords.chordInverter(chords.bflat_9sus4, 2, 0));
+            else if (step == 6)
+                chordChanger(chords.chordInverter(chords.bflat_9sus4, 1, 0));
 
             // loop for now
-            (step + 1) % 3 => step;
+            (step + 1) % 7 => step;
         }
+
         10::ms => now;
     }
 }
