@@ -4,6 +4,8 @@
 @import "scales.ck"
 @import "../lib/gametrak.ck"
 @import "../lib/global.ck"
+@import "../lib/meshlines.ck"
+@import "../lib/lib.ck"
 @import "thread.ck"
 
 GWindow.title("weave");
@@ -15,6 +17,12 @@ GG.bloom(true);
 GG.bloomPass().intensity(0.5);
 GG.bloomPass().radius(0.7);
 GG.bloomPass().levels(9);
+
+// // set an orbit camera as the main camera
+GOrbitCamera cam => GG.scene().camera;
+// // position the camera
+cam.posZ(5);
+// cam.orthographic();
 
 NoteProvider provider;
 BPM bpm;
@@ -70,12 +78,12 @@ for (0 => int i; i < CHANNELS; ++i) {
 /// ---------- VISUAL ---------- /////
 
 // tracking lines
-GLines @allLines[0];
+MeshLines @allLines[0];
 float allLinePos[0];
 int allLineDir[0];
 
 fun addLine(int direction, Thread @thread) {
-    GLines line --> GG.scene();
+    MeshLines line --> GG.scene();
 
     allLines << line;
     // horizontal then use axis 2
@@ -93,25 +101,30 @@ fun addLine(int direction, Thread @thread) {
     }
 
     spork ~ drawLine(direction, line);
-    spork ~ animate(line) @=> Shred @animateShred;
-    animateShred @=> thread.animateShred;
+    spork ~ animate(line) @=> thread.animateShred;
 }
 
-fun void drawLine(int direction, GLines @line) {
+fun void drawLine(int direction, MeshLines @line) {
     now => time start;
     0.5::second => dur transTime;
+    Lib.random(@(1.7, 0, 0)) => vec3 px1;
+    Lib.random(@(-1.7, 0, 0)) => vec3 px2;
+    Lib.random(@(0., 1.7, 0)) => vec3 py1;
+    Lib.random(@(0., -1.7, 0)) => vec3 py2;
     while (now - start < transTime) {
         GG.nextFrame() => now;
         (now - start) / transTime => float t;
         if (direction == 0) {
-            line.positions([@(5, 0), @(5 - t * 10, 0)]);
+            Lib.bezier(@(5, 0, 0), px1 + @(3.3 * (1 - t), 0, 0), px2 + @(6.6 * (1 - t), 0, 0),
+                       @(-5 + 10 * (1 - t), 0, 0), 200) => line.positions;
         } else {
-            line.positions([@(0, 5), @(0, 5 - t * 10)]);
+            Lib.bezier(@(0, 5, 0), py1 + @(0, 3.3 * (1 - t), 0), py2 + @(0, 6.6 * (1 - t), 0),
+                       @(0, -5 + 10 * (1 - t), 0), 200) => line.positions;
         }
     }
 }
 
-fun void animate(GLines @line) {
+fun void animate(MeshLines @line) {
     now => time t0;
     // (2 * Math.PI) / (10 * (beatLen / 1::second)) => float speed;
     1 => float speed;
