@@ -326,6 +326,21 @@ fun void stateHandler() {
 }
 spork ~ stateHandler();
 
+fun void keyboardHandler() {
+    while (true) {
+        GG.nextFrame() => now;
+        if (UI.isKeyPressed(UI_Key.A, false)) {
+            // fake a thread pos
+            Math.randomf() => gt.axis[2];
+            addThread(0);
+        } else if (UI.isKeyPressed(UI_Key.S, false)) {
+            // fake a thread pos
+            Math.randomf() => gt.axis[5];
+            addThread(1);
+        }
+    }
+}
+spork ~ keyboardHandler();
 
 fun void print() {
     while (true) {
