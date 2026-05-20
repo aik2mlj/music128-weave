@@ -12,7 +12,7 @@ public class Thread {
     lpf.set(800, 1);
     rev.gain(0.5);
     rev.mix(0.1);
-    env.set(300::ms, 500::ms, 0.2, 400::ms);
+    env.set(300::ms, 500::ms, 0.1, 400::ms);
 
     Shred @animateShred;
     Shred @rhythmShred;
@@ -50,14 +50,14 @@ public class Thread {
 
     // using LFO maybe a smarter way
     // but then also how do you control the rate?
-    fun void rhythmicPause(dur length) {
-        while (true) {
-            env.keyOn();
-            length => now;
-            env.keyOff();
-            length => now;
-        }
-    }
+    // fun void rhythmicPause(dur length) {
+    //     while (true) {
+    //         env.keyOn();
+    //         length => now;
+    //         env.keyOff();
+    //         length => now;
+    //     }
+    // }
 
     fun void rhythmicPause(dur segments[]) {
         if (segments.size() <= 1) {

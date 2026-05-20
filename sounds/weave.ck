@@ -49,7 +49,7 @@ Thread threads[CHANNELS];
 
 for (0 => int i; i < CHANNELS; ++i) {
     threads[i].connect2dac(i);
-    threads[i].init(TriOsc osc);
+    threads[i].init(SawOsc osc);
 }
 
 1::second => now;
@@ -151,9 +151,11 @@ fun void updateExistingRhythms() {
             continue;
 
         dur segs[];
-        if (threads[i].direction == 0)
+        if (threads[i].direction == 0) {
             computeSegments(vertPositions, vertCount) @=> segs;
-        else
+            <<< "vertical count for existing: ", vertCount >>>;
+            <<< "number of segments: ", segs.size() >>>;
+        } else
             computeSegments(horizPositions, horizCount) @=> segs;
         if (threads[i].rhythmShred != null)
             threads[i].rhythmShred.exit();
@@ -164,6 +166,7 @@ fun void updateExistingRhythms() {
 
 fun void addThread(int direction) {
     threads[threadNum++ % CHANNELS] @=> Thread thread;
+
     if (thread.isOn()) {
         thread.off();
     }
@@ -213,7 +216,7 @@ fun void addThread(int direction) {
 
 /// ---------- CHORD ---------- /////
 // default chord
-chords.c_major @=> provider.notes;
+chords.chordInverter(chords.c_major, 1, 1) @=> provider.notes;
 
 // for changing the entire chord/ scale scope
 fun void chordChanger(int input[]) {
