@@ -52,8 +52,11 @@ oin.addAddress("/client/linepos");
 
 // OscOut multicast
 // multicast address sends to all machines on local network
-// "255.255.255.255" => string hostname;
-"localhost" => string hostname;
+"255.255.255.255" => string hostname;
+// "localhost" => string hostname;
+if (me.args()) {
+    me.arg(0) => hostname;
+}
 // destination port number
 6449 => int port;
 // sender object
