@@ -9,7 +9,6 @@
 @import "sounds/thread.ck"
 
 NoteProvider provider;
-BPM bpm;
 Chords chords;
 Scales scales;
 
@@ -348,6 +347,9 @@ fun void keyboardHandler() {
             addThread(1);
         } else if (UI.isKeyPressed(UI_Key.Space, false)) {
             1 => gt.buttonPressed;
+            gt.buttonPress.broadcast();
+            10::ms => now;
+            0 => gt.buttonPressed;
         }
     }
 }
