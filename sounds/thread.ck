@@ -17,9 +17,9 @@ public class Thread {
     Shred @animateShred;
     Shred @rhythmShred;
 
-
-    float pos;     // store the x (for vertical) and y (for horizontal)
     int direction; // 0 = horizontal, 1 = vertical
+    float pos;     // store the x (for vertical) and y (for horizontal)
+    vec3 color;
 
     fun void init(Osc timbre) {
         timbre @=> osc;
