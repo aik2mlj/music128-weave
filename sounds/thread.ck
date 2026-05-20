@@ -44,8 +44,8 @@ public class Thread {
         env.keyOff();
         if (animateShred != null)
             animateShred.exit();
-        if (rhythmShred != null)
-            rhythmShred.exit();
+        // if (rhythmShred != null)
+        //     rhythmShred.exit();
     }
 
     // using LFO maybe a smarter way
@@ -60,6 +60,10 @@ public class Thread {
     }
 
     fun void rhythmicPause(dur segments[]) {
+        if (segments.size() <= 1) {
+            env.keyOn();
+            return;
+        }
         while (true) {
             for (0 => int i; i < segments.size(); i++) {
                 env.keyOn();

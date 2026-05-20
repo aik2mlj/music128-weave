@@ -102,7 +102,6 @@ fun void animate(GLines @line) {
     while (true) {
         GG.nextFrame() => now;
         (now - t0) / 1::second => float t;
-        <<< t >>>;
         Math.sin(t * speed) => float inc;
         LINE_WIDTH + inc * 0.005 => line.width;
         @(LINE_COLOR.x + (inc + Math.randomf()) * dcolor,
@@ -195,19 +194,20 @@ fun void addThread(int direction) {
         vertPositions << gt2x(thread.pos);
     }
 
+    thread.on();
     updateExistingRhythms();
 
-    // horizontal use vertCount;  otherwise the reverse
-    if ((direction == 0 ? vertCount : horizCount) == 0)
-        thread.on(); // sustain
-    else {           //
-        dur segs[];
-        if (direction == 0)
-            computeSegments(vertPositions, vertCount) @=> segs;
-        else
-            computeSegments(horizPositions, horizCount) @=> segs;
-        spork ~ thread.rhythmicPause(segs) @=> thread.rhythmShred;
-    }
+    // // horizontal use vertCount;  otherwise the reverse
+    // if ((direction == 0 ? vertCount : horizCount) == 0)
+    //     thread.on(); // sustain
+    // else {           //
+    // dur segs[];
+    // if (direction == 0)
+    //     computeSegments(vertPositions, vertCount) @=> segs;
+    // else
+    //     computeSegments(horizPositions, horizCount) @=> segs;
+    // spork ~ thread.rhythmicPause(segs) @=> thread.rhythmShred;
+    // }
 }
 
 
