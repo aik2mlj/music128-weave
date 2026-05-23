@@ -39,6 +39,10 @@ public class Thread {
     fun void freq(float f) { osc.freq(f); }
 
     fun void on() { env.keyOn(); }
+
+    fun void shimmerOn() { osc.gain(0.1); }
+
+
     fun int isOn() { return env.value() > 0. || rhythmShred != null; }
     fun void off() {
         env.keyOff();

@@ -47,13 +47,7 @@ for (0 => int i; i < CHANNELS; ++i) {
 
 1::second => now;
 
-// 0: left handle's x
-// 1: left handle's y
-// 2: left handle's z
-// 3: right handle's x
-// 4: right handle's y
-// 5: right handle's z
-//
+
 // sync that is synced with server
 float sync;
 
@@ -144,10 +138,12 @@ fun void addThread(int direction) {
     float pos; // pos to be stored and thus can be reinterpreted during chord change
     int note;
 
+    // gt axis[2] and [5] are for pitch right now
+
     if (direction == 0) // horizontal
-        gt.axis[2] => pos;
+        gt.axis[1] => pos;
     else // vertical
-        gt.axis[5] => pos;
+        gt.axis[4] => pos;
 
     pos => thread.pos;
     direction => thread.direction;
@@ -270,6 +266,15 @@ fun void chordSequencer() {
 
 spork ~ chordSequencer();
 
+
+// 0: left handle's x
+// 1: left handle's y
+// 2: left handle's z
+// 3: right handle's x
+// 4: right handle's y
+// 5: right handle's z
+
+
 /// ---------- STATE ---------- /////
 public class State {
     0 => static int NONE;
@@ -287,9 +292,58 @@ State.NONE => int stateY;
 0 => int threadNum;
 
 
+// but right now it's just for two lines
+// also need to make sure that the lines continue to ring on
+
+// need to sendAddLine
+fun void drawHandler() {
+
+    0.005 => float DEADZONE;
+
+    int activeH;
+    int activeV;
+    int hSlot;
+    int vSlot;
+
+    while (true) {
+        10::ms => now;
+
+        // Horizontal thread (axis[2])
+        // which includes it being deltaH is positive
+        if (gt.axis[2] > DEADZONE) {
+            if (!activeH) {
+                1 => activeH;
+                threadNum % CHANNELS => hSlot; // record slot for turning off again
+                100::ms => now;
+                addThread(0);
+            }
+        } else if (activeH) {
+            0 => activeH;
+            threads[hSlot].shimmerOn();
+        }
+
+        // Vertical thread (axis[5])
+
+        if (gt.axis[5] > DEADZONE) {
+            if (!activeV) {
+                1 => activeV;
+                threadNum % CHANNELS => vSlot;
+                addThread(1);
+            }
+        } else if (activeV) {
+            0 => activeV;
+            threads[hSlot].shimmerOn();
+        }
+    }
+}
+
+
+spork ~ drawHandler();
+
+// for tracking the motion
 fun void stateHandler() {
     while (true) {
-        // X
+        // X, left tether
         State.NONE => int newState;
         if (gt.axis[0] < -0.05)
             State.LEFT => newState;
@@ -297,6 +351,9 @@ fun void stateHandler() {
             State.RIGHT => newState;
         else
             State.CENTER => newState;
+
+
+        // gt.axis[2]
 
         // only act on state transitions
         if (newState != stateX) {
@@ -314,7 +371,8 @@ fun void stateHandler() {
             }
         }
 
-        // Y
+
+        // Y, right tether
         State.NONE => newState;
         if (gt.axis[4] < -0.05)
             State.LEFT => newState;
@@ -322,6 +380,9 @@ fun void stateHandler() {
             State.RIGHT => newState;
         else
             State.CENTER => newState;
+
+
+        // gt.axis[5]
 
         // only act on state transitions
         if (newState != stateY) {
@@ -342,18 +403,18 @@ fun void stateHandler() {
         10::ms => now;
     }
 }
-spork ~ stateHandler();
+// spork ~ stateHandler();
 
 fun void keyboardHandler() {
     while (true) {
         GG.nextFrame() => now;
         if (UI.isKeyPressed(UI_Key.A, false)) {
             // fake a thread pos
-            Math.randomf() => gt.axis[2];
+            Math.randomf() => gt.axis[1];
             addThread(0);
         } else if (UI.isKeyPressed(UI_Key.S, false)) {
             // fake a thread pos
-            Math.randomf() => gt.axis[5];
+            Math.randomf() => gt.axis[4];
             addThread(1);
         } else if (UI.isKeyPressed(UI_Key.Space, false)) {
             1 => gt.buttonPressed;
@@ -363,7 +424,7 @@ fun void keyboardHandler() {
         }
     }
 }
-spork ~ keyboardHandler();
+// spork ~ keyboardHandler();
 
 fun void print() {
     while (true) {
