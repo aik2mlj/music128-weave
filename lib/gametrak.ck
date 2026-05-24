@@ -13,6 +13,10 @@ public class GameTrak {
     float lastAxis[6];
     // current axis data
     float axis[6];
+    // previous velocity
+    float lastVel[6];
+    // current velocity
+    float vel[6];
 
     // if button pressed on last frame (internally used)
     int lastButtonPressed;
@@ -55,6 +59,9 @@ public class GameTrak {
                             // set
                             now => currTime;
                         }
+                        vel[msg.which] => lastVel[msg.which];
+                        // find current velocity
+                        axis[msg.which] - lastAxis[msg.which] => vel[msg.which];
                         // save last
                         axis[msg.which] => lastAxis[msg.which];
                         // the z axes map to [0,1], others map to [-1,1]

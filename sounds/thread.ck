@@ -8,11 +8,15 @@ public class Thread {
 
     BPM bpm;
 
-    ADSR env => LPF lpf => NRev rev;
+    ADSR env => LPF lpf => Chorus chorus => NRev rev;
     lpf.set(800, 1);
     rev.gain(0.5);
     rev.mix(0.2);
-    env.set(500::ms, 500::ms, 0.1, 10::ms);
+    env.set(500::ms, 500::ms, 0.2, 10::ms);
+    chorus.baseDelay(10::ms);
+    chorus.modDepth(.4);
+    chorus.modFreq(1);
+    chorus.mix(.2);
 
     Shred @animateShred;
     Shred @rhythmShred;
@@ -21,10 +25,44 @@ public class Thread {
     float pos;     // store the x (for vertical) and y (for horizontal)
     vec3 color;
 
+
     fun void init(Osc timbre) {
         timbre @=> osc;
         osc => env;
         osc.gain(0.5);
+    }
+
+    // using this to help with pitch bend
+    Envelope pitch => blackhole;
+    1::second => pitch.duration;
+    0 => pitch.value;
+
+
+    Shred @pitchShred;
+
+    float targetPitch;
+
+    fun void set_target_pitch(float bendSemitone, int inputNote) {
+        inputNote $ float => pitch.target => targetPitch;
+        // current, from below
+        (inputNote - bendSemitone) $ float => pitch.value;
+
+        pitch.keyOn();
+
+        if (pitchShred != null)
+            pitchShred.exit();
+
+        spork ~ pitchBend() @=> pitchShred;
+    }
+
+
+    fun void pitchBend() {
+        now => time start;
+        while (now - start < 1.2::second) {
+            osc.freq(Std.mtof(48 + pitch.value()));
+            5::ms => now;
+        }
+        osc.freq(Std.mtof(48 + targetPitch));
     }
 
 
@@ -40,8 +78,12 @@ public class Thread {
 
     fun void on() { env.keyOn(); }
 
-    fun void shimmerOn() { osc.gain(0.1); }
+    fun void shimmerOn() { spork ~ shimmerRamp(); }
 
+    fun void shimmerRamp() {
+        // this must be sporked to advance time
+        env.ramp(600::ms, 0.02) => now;
+    }
 
     fun int isOn() { return env.value() > 0. || rhythmShred != null; }
     fun void off() {
@@ -51,17 +93,6 @@ public class Thread {
         if (rhythmShred != null)
             rhythmShred.exit();
     }
-
-    // using LFO maybe a smarter way
-    // but then also how do you control the rate?
-    // fun void rhythmicPause(dur length) {
-    //     while (true) {
-    //         env.keyOn();
-    //         length => now;
-    //         env.keyOff();
-    //         length => now;
-    //     }
-    // }
 
     fun void rhythmicPause(dur segments[]) {
         if (segments.size() <= 1) {
