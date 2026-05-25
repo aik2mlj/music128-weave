@@ -16,6 +16,10 @@ GG.bloomPass().intensity(0.5);
 GG.bloomPass().radius(0.7);
 GG.bloomPass().levels(9);
 
+// remove light
+GG.scene().light() @=> GLight light;
+0. => light.intensity;
+
 // // set an orbit camera as the main camera
 GOrbitCamera cam => GG.scene().camera;
 // // position the camera
