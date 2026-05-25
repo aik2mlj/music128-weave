@@ -143,10 +143,10 @@ fun void addThread(int direction) {
     // gt axis[2] and [5] are for pitch right now
 
     if (direction == 0) { // horizontal
-        (gt.axis[1] + 1 / 2) => pos;
+        (gt.axis[1] + 1) / 2 => pos;
         thread.init(TriOsc osc);
     } else { // vertical
-        (gt.axis[4] + 1 / 2) => pos;
+        (gt.axis[4] + 1) / 2 => pos;
         thread.init(SawOsc osc);
     }
 
@@ -413,11 +413,11 @@ fun void keyboardHandler() {
         GG.nextFrame() => now;
         if (UI.isKeyPressed(UI_Key.A, false)) {
             // fake a thread pos
-            Math.randomf() => gt.axis[1];
+            Math.randomf() * 2 - 1 => gt.axis[1];
             addThread(0);
         } else if (UI.isKeyPressed(UI_Key.S, false)) {
             // fake a thread pos
-            Math.randomf() => gt.axis[4];
+            Math.randomf() * 2 - 1 => gt.axis[4];
             addThread(1);
         } else if (UI.isKeyPressed(UI_Key.Space, false)) {
             1 => gt.buttonPressed;
