@@ -50,8 +50,8 @@ for (0 => int i; i < CHANNELS; ++i) {
 1::second => now;
 
 
-// sync that is synced with server
-float sync;
+// cycle is synced with server
+dur cycle;
 
 // OscIn from clients
 // create our OSC receiver
@@ -61,7 +61,7 @@ OscMsg msg;
 // use port 6449 (or whatever)
 6449 => oin.port;
 // create an address in the receiver, expect an int and a float
-oin.addAddress("/server/sync");
+oin.addAddress("/server/cycle");
 oin.addAddress("/server/segs");
 
 "localhost" => string hostname;
@@ -84,9 +84,13 @@ fun void serverListener() {
 
         while (oin.recv(msg)) {
             // chout <= "received message: " <= msg.address <= IO.newline();
-            if (msg.address == "/server/sync") {
+            if (msg.address == "/server/cycle") {
                 if (msg.typetag == "f") {
-                    msg.getFloat(0) => sync;
+                    if (msg.getFloat(0)::second != cycle) {
+                        msg.getFloat(0)::second => cycle;
+                        // update cycle
+                        <<< "cycle updated:", cycle / second, "s" >>>;
+                    }
                 }
             } else if (msg.address == "/server/segs") {
                 // reconstruct the array from however many args came in

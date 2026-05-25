@@ -3,10 +3,10 @@ public class BPM {
     static dur quarterNote, eighthNote, sixteenthNote, sextupletNote, bar;
 
     // Derives standard musical durations from the supplied BPM value.
-    fun void tempo(float beat) {
+    fun void tempo(float bpm) {
         // and it sets up the length in seconds for quarter, eighth, and sixteenth tuplets
         // accordingly SPB = second per beat
-        60.0 / beat => float SPB;
+        60.0 / bpm => float SPB;
         SPB::second => quarterNote;
         quarterNote / 2 => eighthNote;
         eighthNote / 2 => sixteenthNote;
@@ -14,5 +14,10 @@ public class BPM {
         quarterNote * 4 => bar;
 
         [quarterNote, eighthNote, sixteenthNote, sextupletNote] @=> myDuration;
+    }
+
+    fun float tempo() {
+        60.0 / (quarterNote / 1::second) => float bpm;
+        return bpm;
     }
 }
