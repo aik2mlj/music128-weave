@@ -12,7 +12,7 @@ public class Thread {
     lpf.set(800, 1);
     rev.gain(0.5);
     rev.mix(0.2);
-    env.set(500::ms, 500::ms, 0.2, 10::ms);
+    env.set(500::ms, 500::ms, 0.02, 10::ms);
     chorus.baseDelay(10::ms);
     chorus.modDepth(.4);
     chorus.modFreq(1);
@@ -78,13 +78,6 @@ public class Thread {
 
     fun void on() { env.keyOn(); }
 
-    fun void shimmerOn() { spork ~ shimmerRamp(); }
-
-    fun void shimmerRamp() {
-        // this must be sporked to advance time
-        env.ramp(600::ms, 0.02) => now;
-    }
-
     fun int isOn() { return env.value() > 0. || rhythmShred != null; }
     fun void off() {
         env.keyOff();
@@ -96,7 +89,7 @@ public class Thread {
 
     fun void rhythmicPause(dur segments[]) {
         if (segments.size() <= 1) {
-            env.keyOn();
+            // env.keyOn();
             return;
         }
         while (true) {
