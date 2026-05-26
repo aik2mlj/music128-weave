@@ -84,7 +84,6 @@ public class Thread {
         0.5 => karp.pluck;
     }
 
-
     fun void connect2dac(int chan) { rev => dac.chan(chan % dac.channels()); }
 
     //    fun void connect2dac(int chan) { rev => dac.chan(chan); }
