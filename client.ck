@@ -63,6 +63,7 @@ OscMsg msg;
 // create an address in the receiver, expect an int and a float
 oin.addAddress("/server/cycle");
 oin.addAddress("/server/segs");
+oin.addAddress("/server/chord");
 
 "localhost" => string hostname;
 0 => int ID;
@@ -92,6 +93,22 @@ fun void serverListener() {
                         <<< "cycle updated:", cycle / second, "s" >>>;
                     }
                 }
+            } else if (msg.address == "/server/chord") {
+                msg.getInt(0) => int step;
+                if (step == 0)
+                    chordChanger(chords.b_maj9);
+                else if (step == 1)
+                    chordChanger(chords.fsharp_maj9);
+                else if (step == 2)
+                    chordChanger(chords.csharp_maj7);
+                else if (step == 3)
+                    chordChanger(chords.aflat_sus2);
+                else if (step == 4)
+                    chordChanger(chords.bflat_9sus4);
+                else if (step == 5)
+                    chordChanger(chords.chordInverter(chords.bflat_9sus4, 2, 0));
+                else if (step == 6)
+                    chordChanger(chords.chordInverter(chords.bflat_9sus4, 1, 0));
             } else if (msg.address == "/server/segs") {
                 // reconstruct the array from however many args came in
                 msg.getInt(0) => int numX;
@@ -314,7 +331,7 @@ fun void chordSequencer() {
     }
 }
 
-spork ~ chordSequencer();
+// spork ~ chordSequencer();
 
 
 // 0: left handle's x
@@ -463,7 +480,6 @@ fun void keyboardHandler() {
             gt.buttonPress.broadcast();
             10::ms => now;
             0 => gt.buttonPressed;
-            <<< "button pressed" >>>;
         }
     }
 }

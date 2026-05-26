@@ -3,6 +3,7 @@
 @import "sounds/chords.ck"
 @import "sounds/scales.ck"
 @import "lib/lib.ck"
+@import "lib/gametrak.ck"
 @import "sounds/thread.ck"
 @import "visual/fireflies.ck"
 @import "visual/lines.ck"
@@ -63,6 +64,9 @@ Lines lines(xmit, bpm) --> GG.scene();
 // add fireflies
 Fireflies fireflies --> GG.scene();
 
+Chords chords;
+GameTrak gt(0);
+
 /// ---------- CONTROL ---------- /////
 
 fun void clientListener() {
@@ -119,6 +123,19 @@ fun void sendCycle() {
     xmit.add(bpm.quarterNote / second);
     xmit.send();
 }
+
+fun void chordSequencer() {
+    0 => int step;
+    while (true) {
+        gt.buttonPress => now;
+        xmit.start("/server/chord");
+        step => xmit.add;
+        xmit.send();
+        (step + 1) % 7 => step;
+        <<< "chord step broadcast:", step >>>;
+    }
+}
+spork ~ chordSequencer();
 
 // main loop
 while (true) {
