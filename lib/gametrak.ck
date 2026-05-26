@@ -27,6 +27,10 @@ public class GameTrak {
     // if button up
     int buttonUp;
 
+
+    // check if the button is continuously held down
+    int buttonHeldDown;
+
     // Button press event
     Event buttonPress;
 
@@ -83,6 +87,13 @@ public class GameTrak {
 
                 if (buttonPressed)
                     buttonPress.broadcast();
+
+                // alternative: only update button state on button events
+                if (msg.isButtonDown()) {
+                    1 => buttonHeldDown;
+                } else if (msg.isButtonUp()) {
+                    0 => buttonHeldDown;
+                }
             }
         }
     }

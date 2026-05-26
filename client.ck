@@ -133,6 +133,41 @@ fun void updateExistingRhythms(dur segXs[], dur segYs[]) {
     }
 }
 
+
+fun void cutThread(int direction) {
+    if (direction == 0) {
+        for (0 => int i; i < CHANNELS; i++) {
+            if (threads[i].isOn() && threads[i].direction == 0) {
+                threads[i].off();
+            }
+        }
+    } else if (direction == 1) {
+        for (0 => int i; i < CHANNELS; i++) {
+            if (threads[i].isOn() && threads[i].direction == 1) {
+                threads[i].off();
+            }
+        }
+    }
+}
+
+// fun void cutThread(int direction){
+
+//     int targetNote;
+//     if (direction == 0)
+//         provider.getNote(gt.axis[5]) => targetNote;
+//     else if (direction == 1)
+//         provider.getNote(gt.axis[2]) => targetNote;
+
+//     for (0 => int i; i < CHANNELS; i++) {
+//         if (threads[i].isOn() && threads[i].direction == direction
+//                 && provider.getNote(threads[i].pos) == targetNote) {
+
+//             threads[i].off();
+//         }
+//     }
+// }
+
+
 fun void addThread(int direction) {
     <<< "addthread" >>>;
     threads[threadNum++ % CHANNELS] @=> Thread thread;
@@ -173,6 +208,7 @@ fun void addThread(int direction) {
 
     // updateExistingRhythms();
 }
+
 
 fun void sendAddLine(Thread @thread) {
     // send an OSC message to the server
@@ -290,15 +326,15 @@ spork ~ chordSequencer();
 
 
 /// ---------- STATE ---------- /////
-// public class State {
-//     0 => static int NONE;
-//     1 => static int LEFT;
-//     2 => static int RIGHT;
-//     3 => static int CENTER;
-// }
+public class State {
+    0 => static int NONE;
+    1 => static int LEFT;
+    2 => static int RIGHT;
+    3 => static int CENTER;
+}
 
-// State.NONE => int stateX;
-// State.NONE => int stateY;
+State.NONE => int stateX;
+State.NONE => int stateY;
 
 // the state within this round of weaving.
 // 0 = none, 1 = left seen, 2 = center seen, 3 = right seen
@@ -323,7 +359,7 @@ fun void drawHandler() {
 
         // Horizontal thread (axis[2])
         // which includes it being deltaH is positive
-        if (gt.vel[2] > DEADZONE && !wasMovingH) {
+        if (gt.vel[2] > DEADZONE && !wasMovingH && !gt.buttonHeldDown) {
             1 => wasMovingH;
             threadNum % CHANNELS => hSlot; // record slot for turning off again
             addThread(0);
@@ -331,7 +367,7 @@ fun void drawHandler() {
             0 => wasMovingH;
         }
 
-        if (gt.vel[5] > DEADZONE && !wasMovingV) {
+        if (gt.vel[5] > DEADZONE && !wasMovingV && !gt.buttonHeldDown) {
             1 => wasMovingV;
             threadNum % CHANNELS => vSlot;
             addThread(1);
@@ -345,69 +381,71 @@ fun void drawHandler() {
 spork ~ drawHandler();
 
 // for tracking the motion
-// fun void stateHandler() {
-//     while (true) {
-//         // X, left tether
-//         State.NONE => int newState;
-//         if (gt.axis[0] < -0.05)
-//             State.LEFT => newState;
-//         else if (gt.axis[0] > 0.05)
-//             State.RIGHT => newState;
-//         else
-//             State.CENTER => newState;
+fun void stateHandler() {
+    while (true) {
+        // X, left tether
+        State.NONE => int newState;
+        if (gt.axis[0] < -0.05)
+            State.LEFT => newState;
+        else if (gt.axis[0] > 0.05)
+            State.RIGHT => newState;
+        else
+            State.CENTER => newState;
 
 
-//         // gt.axis[2]
+        // gt.axis[2]
 
-//         // only act on state transitions
-//         if (newState != stateX) {
-//             newState => stateX;
+        // only act on state transitions
+        if (newState != stateX) {
+            newState => stateX;
 
-//             if (stateX == State.LEFT && roundStage == 0)
-//                 1 => roundStage;
-//             else if (stateX == State.CENTER && roundStage == 1)
-//                 2 => roundStage;
-//             else if (stateX == State.RIGHT && roundStage == 2)
-//                 3 => roundStage;
-//             else if (stateX == State.CENTER && roundStage == 3) {
-//                 addThread(0);
-//                 0 => roundStage;
-//             }
-//         }
-
-
-//         // Y, right tether
-//         State.NONE => newState;
-//         if (gt.axis[4] < -0.05)
-//             State.LEFT => newState;
-//         else if (gt.axis[4] > 0.05)
-//             State.RIGHT => newState;
-//         else
-//             State.CENTER => newState;
+            if (stateX == State.LEFT && roundStage == 0)
+                1 => roundStage;
+            else if (stateX == State.CENTER && roundStage == 1)
+                2 => roundStage;
+            else if (stateX == State.RIGHT && roundStage == 2)
+                3 => roundStage;
+            else if (stateX == State.CENTER && roundStage == 3) {
+                if (gt.buttonHeldDown)
+                    cutThread(1);
+                0 => roundStage;
+            }
+        }
 
 
-//         // gt.axis[5]
+        // Y, right tether
+        State.NONE => newState;
+        if (gt.axis[4] < -0.05)
+            State.LEFT => newState;
+        else if (gt.axis[4] > 0.05)
+            State.RIGHT => newState;
+        else
+            State.CENTER => newState;
 
-//         // only act on state transitions
-//         if (newState != stateY) {
-//             newState => stateY;
 
-//             if (stateY == State.LEFT && roundStage == 0)
-//                 1 => roundStage;
-//             else if (stateY == State.CENTER && roundStage == 1)
-//                 2 => roundStage;
-//             else if (stateY == State.RIGHT && roundStage == 2)
-//                 3 => roundStage;
-//             else if (stateY == State.CENTER && roundStage == 3) {
-//                 addThread(1);
-//                 0 => roundStage;
-//             }
-//         }
+        // gt.axis[5]
 
-//         10::ms => now;
-//     }
-// }
-// spork ~ stateHandler();
+        // only act on state transitions
+        if (newState != stateY) {
+            newState => stateY;
+
+            if (stateY == State.LEFT && roundStage == 0)
+                1 => roundStage;
+            else if (stateY == State.CENTER && roundStage == 1)
+                2 => roundStage;
+            else if (stateY == State.RIGHT && roundStage == 2)
+                3 => roundStage;
+            else if (stateY == State.CENTER && roundStage == 3) {
+                if (gt.buttonHeldDown)
+                    cutThread(0);
+                0 => roundStage;
+            }
+        }
+
+        10::ms => now;
+    }
+}
+spork ~ stateHandler();
 
 fun void keyboardHandler() {
     while (true) {

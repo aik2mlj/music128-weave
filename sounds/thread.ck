@@ -55,6 +55,8 @@ public class Thread {
         spork ~ pitchBend() @=> pitchShred;
     }
 
+    fun void stringCut() {}
+
 
     fun void pitchBend() {
         now => time start;
@@ -81,10 +83,14 @@ public class Thread {
     fun int isOn() { return env.value() > 0. || rhythmShred != null; }
     fun void off() {
         env.keyOff();
-        if (animateShred != null)
+        if (animateShred != null) {
             animateShred.exit();
-        if (rhythmShred != null)
+            null @=> animateShred;
+        }
+        if (rhythmShred != null) {
             rhythmShred.exit();
+            null @=> rhythmShred;
+        }
     }
 
     fun void rhythmicPause(dur segments[]) {
