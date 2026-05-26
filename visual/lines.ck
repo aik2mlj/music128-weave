@@ -2,13 +2,15 @@
 @import "../sounds/bpm.ck"
 
 public class Lines extends GGen {
-    0.01 => float LINE_WIDTH;
-    @(0.2, 0.2, 0.2) => vec3 LINE_COLOR;
+    0.01 => static float LINE_WIDTH;
+    @(0.2, 0.2, 0.2) => static vec3 LINE_COLOR;
 
-    -2 * 16 / 9 => float MIN_X;
-    2 * 16 / 9 => float MAX_X;
-    -2 => float MIN_Y;
-    2 => float MAX_Y;
+    -2 * 16 / 9 => static float MIN_X;
+    2 * 16 / 9 => static float MAX_X;
+    -2 => static float MIN_Y;
+    2 => static float MAX_Y;
+    -10 => static float MIN_Z;
+    5 => static float MAX_Z;
 
     16 => static int MAX_PLAYER_NUM;
     MeshLines @allLines[MAX_PLAYER_NUM][0];
@@ -16,6 +18,8 @@ public class Lines extends GGen {
     float horizPositions[0]; // for horizontal lines
     0 => int vertCount;
     0 => int horizCount;
+
+    vec3 color;
 
     OscOut @xmit;
     BPM bpm;
@@ -34,7 +38,7 @@ public class Lines extends GGen {
 
         allLines[id] << line;
 
-        line.color(color);
+        color => this.color;
         line.width(LINE_WIDTH);
 
         if (direction == 0) {
@@ -49,7 +53,9 @@ public class Lines extends GGen {
 
         spork ~ drawLine(direction, line);
         // TODO: currectly animate is going on forever
-        spork ~ animate(line);
+        spork ~ animateWidth(line);
+        spork ~ scrollLine(direction, line);
+        spork ~ colorizeLine(line);
 
         updateSegs();
     }
@@ -57,24 +63,29 @@ public class Lines extends GGen {
     fun void drawLine(int direction, MeshLines @line) {
         now => time start;
         0.5::second => dur transTime;
+        Lib.random(@(5., 0, 0)) => vec3 px0;
         Lib.random(@(1.7, 0, 0)) => vec3 px1;
         Lib.random(@(-1.7, 0, 0)) => vec3 px2;
+        Lib.random(@(-5., 0, 0)) => vec3 px3;
+        Lib.random(@(0., 5., 0)) => vec3 py0;
         Lib.random(@(0., 1.7, 0)) => vec3 py1;
         Lib.random(@(0., -1.7, 0)) => vec3 py2;
+        Lib.random(@(0., -5, 0)) => vec3 py3;
+        // drawing animation
         while (now - start < transTime) {
             GG.nextFrame() => now;
             (now - start) / transTime => float t;
             if (direction == 0) {
-                Lib.bezier(@(5, 0, 0), px1 + @(3.3 * (1 - t), 0, 0), px2 + @(6.6 * (1 - t), 0, 0),
-                           @(-5 + 10 * (1 - t), 0, 0), 200) => line.positions;
+                Lib.bezier(px0, px1 + @(3.3 * (1 - t), 0, 0), px2 + @(6.6 * (1 - t), 0, 0),
+                           px3 + @(10 * (1 - t), 0, 0), 200) => line.positions;
             } else {
-                Lib.bezier(@(0, 5, 0), py1 + @(0, 3.3 * (1 - t), 0), py2 + @(0, 6.6 * (1 - t), 0),
-                           @(0, -5 + 10 * (1 - t), 0), 200) => line.positions;
+                Lib.bezier(py0, py1 + @(0, 3.3 * (1 - t), 0), py2 + @(0, 6.6 * (1 - t), 0),
+                           py3 + @(0, 10 * (1 - t), 0), 200) => line.positions;
             }
         }
     }
 
-    fun void animate(MeshLines @line) {
+    fun void animateWidth(MeshLines @line) {
         now => time t0;
         // (2 * Math.PI) / (10 * (beatLen / 1::second)) => float speed;
         1 => float speed;
@@ -87,6 +98,32 @@ public class Lines extends GGen {
             // @(LINE_COLOR.x + (inc + Math.randomf()) * dcolor,
             //   LINE_COLOR.y + (inc + Math.randomf()) * dcolor,
             //   LINE_COLOR.z + (inc + Math.randomf()) * dcolor) => line.color;
+        }
+    }
+
+    fun void scrollLine(int direction, MeshLines @line) {
+        0.5 => float speed;
+        -5. => float z0;
+        line.posZ(z0);
+        // scrolling
+        now => time start;
+        while (true) {
+            GG.nextFrame() => now;
+            (now - start) / 1::second => float t;
+            // scroll posZ within MIN_Z and MAX_Z, wrap around
+            (z0 + speed * t - MIN_Z) % (MAX_Z - MIN_Z) + MIN_Z => float z;
+            line.posZ(z);
+        }
+    }
+
+    fun void colorizeLine(MeshLines @line) {
+        while (true) {
+            GG.nextFrame() => now;
+            line.posZ() => float z;
+            // color the line: the closer to MIN_Z the darker
+            // the closer to MAX_Z the brighter
+            (z - MIN_Z) / (MAX_Z - MIN_Z) => float zScale;
+            @(color.x, color.y, color.z, zScale) => line.color;
         }
     }
 
