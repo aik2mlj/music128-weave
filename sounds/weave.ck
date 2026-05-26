@@ -1,3 +1,5 @@
+// this is the single player version, deprecated in favor of server-client version
+
 @import "noteProvider.ck"
 @import "bpm.ck"
 @import "chords.ck"

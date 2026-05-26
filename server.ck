@@ -60,7 +60,10 @@ xmit.dest(hostname, port);
 
 Lines lines(xmit, bpm) --> GG.scene();
 
-/// ---------- RHYTHM ---------- /////
+// add fireflies
+Fireflies fireflies --> GG.scene();
+
+/// ---------- CONTROL ---------- /////
 
 fun void clientListener() {
     while (true) {
@@ -116,9 +119,6 @@ fun void sendCycle() {
     xmit.add(bpm.quarterNote / second);
     xmit.send();
 }
-
-// add fireflies
-Fireflies fireflies --> GG.scene();
 
 // main loop
 while (true) {
