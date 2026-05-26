@@ -151,38 +151,38 @@ fun void updateExistingRhythms(dur segXs[], dur segYs[]) {
 }
 
 
-fun void cutThread(int direction) {
-    if (direction == 0) {
-        for (0 => int i; i < CHANNELS; i++) {
-            if (threads[i].isOn() && threads[i].direction == 0) {
-                threads[i].off();
-            }
-        }
-    } else if (direction == 1) {
-        for (0 => int i; i < CHANNELS; i++) {
-            if (threads[i].isOn() && threads[i].direction == 1) {
-                threads[i].off();
-            }
-        }
-    }
-}
-
-// fun void cutThread(int direction){
-
-//     int targetNote;
-//     if (direction == 0)
-//         provider.getNote(gt.axis[5]) => targetNote;
-//     else if (direction == 1)
-//         provider.getNote(gt.axis[2]) => targetNote;
-
-//     for (0 => int i; i < CHANNELS; i++) {
-//         if (threads[i].isOn() && threads[i].direction == direction
-//                 && provider.getNote(threads[i].pos) == targetNote) {
-
-//             threads[i].off();
+// fun void cutThread(int direction) {
+//     if (direction == 0) {
+//         for (0 => int i; i < CHANNELS; i++) {
+//             if (threads[i].isOn() && threads[i].direction == 0) {
+//                 threads[i].off();
+//             }
+//         }
+//     } else if (direction == 1) {
+//         for (0 => int i; i < CHANNELS; i++) {
+//             if (threads[i].isOn() && threads[i].direction == 1) {
+//                 threads[i].off();
+//             }
 //         }
 //     }
 // }
+
+fun void cutThread(int direction) {
+
+    int targetNote;
+    if (direction == 0)
+        provider.getNote(gt.axis[5]) => targetNote;
+    else if (direction == 1)
+        provider.getNote(gt.axis[2]) => targetNote;
+
+    for (0 => int i; i < CHANNELS; i++) {
+        if (threads[i].isOn() && threads[i].direction == direction &&
+            provider.getNote(threads[i].pos) == targetNote) {
+
+            threads[i].cut(targetNote);
+        }
+    }
+}
 
 
 fun void addThread(int direction) {

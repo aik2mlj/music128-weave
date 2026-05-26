@@ -55,8 +55,6 @@ public class Thread {
         spork ~ pitchBend() @=> pitchShred;
     }
 
-    fun void stringCut() {}
-
 
     fun void pitchBend() {
         now => time start;
@@ -65,6 +63,25 @@ public class Thread {
             5::ms => now;
         }
         osc.freq(Std.mtof(48 + targetPitch));
+    }
+
+
+    StifKarp karp => ADSR karpEnv => NRev karpRev;
+
+    fun void cut(int inputNote) {
+        this.off();
+
+        karpRev => dac;
+        rev.gain(0.5);
+        rev.mix(0.2);
+        Math.random2f(0, 1) => karp.pickupPosition;
+        Math.random2f(0, 0.5) => karp.sustain;
+        Math.random2f(0, 1) => karp.stretch;
+        karpEnv.keyOn();
+        karpEnv.gain(0.5);
+
+        Std.mtof(inputNote) => karp.freq;
+        0.5 => karp.pluck;
     }
 
 

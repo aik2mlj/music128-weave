@@ -124,13 +124,12 @@ fun void sendCycle() {
     xmit.send();
 }
 
+
+0 => int step;
 fun void chordSequencer() {
-    0 => int step;
+
     while (true) {
         gt.buttonPress => now;
-        xmit.start("/server/chord");
-        step => xmit.add;
-        xmit.send();
         (step + 1) % 7 => step;
         <<< "chord step broadcast:", step >>>;
     }
@@ -140,4 +139,8 @@ spork ~ chordSequencer();
 // main loop
 while (true) {
     GG.nextFrame() => now;
+    // continuous send
+    xmit.start("/server/chord");
+    step => xmit.add;
+    xmit.send();
 }
