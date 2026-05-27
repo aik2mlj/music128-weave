@@ -17,6 +17,7 @@ public class Lines extends GGen {
     MeshLines @allLines[MAX_PLAYER_NUM][0];
     float vertPositions[MAX_PLAYER_NUM][0];  // world-space x of for vertical lines
     float horizPositions[MAX_PLAYER_NUM][0]; // for horizontal lines
+    vec3 lineCtrl[MAX_PLAYER_NUM][0];        // 4 bezier ctrl pts per line (base = 4*idx)
 
     vec3 color;
 
@@ -50,7 +51,22 @@ public class Lines extends GGen {
             vertPositions[id] << gt2x(pos);
         }
 
-        spork ~ drawLine(direction, line);
+        // generate and store bezier control points for this line
+        vec3 p0, p1, p2, p3;
+        if (direction == 0) {
+            Lib.random(@(5., 0, 0)) => p0;
+            Lib.random(@(1.7, 0, 0)) => p1;
+            Lib.random(@(-1.7, 0, 0)) => p2;
+            Lib.random(@(-5., 0, 0)) => p3;
+        } else {
+            Lib.random(@(0., 5., 0)) => p0;
+            Lib.random(@(0., 1.7, 0)) => p1;
+            Lib.random(@(0., -1.7, 0)) => p2;
+            Lib.random(@(0., -5., 0)) => p3;
+        }
+        lineCtrl[id] << p0 << p1 << p2 << p3;
+
+        spork ~ drawLine(direction, line, p0, p1, p2, p3);
         // TODO: currectly animate is going on forever
         spork ~ animateWidth(line);
         spork ~ scrollLine(direction, line);
@@ -66,8 +82,10 @@ public class Lines extends GGen {
             return;
         }
 
-        // remove the line
-        allLines[id][idx] --< this;
+        // fancy cut animation: split at random position, drift apart, fade away
+        4 * idx => int base;
+        spork ~ cutAnimation(allLines[id][idx], direction, lineCtrl[id][base],
+                            lineCtrl[id][base + 1], lineCtrl[id][base + 2], lineCtrl[id][base + 3]);
 
         // allLines[id].erase(idx);
         if (direction == 0) {
@@ -79,27 +97,93 @@ public class Lines extends GGen {
         updateSegs();
     }
 
-    fun void drawLine(int direction, MeshLines @line) {
+    fun void cutAnimation(MeshLines @line, int direction, vec3 p0, vec3 p1, vec3 p2, vec3 p3) {
+        // reconstruct the actual settled curve — this is the base for the split
+        Lib.bezier(p0, p1, p2, p3, 200) @=> vec3 basePts[];
+
+        // random split point; clamp so each half gets at least 2 points
+        Math.randomf() => float splitT;
+        (splitT * 200) $ int => int cutIdx;
+        if (cutIdx < 2)
+            2 => cutIdx;
+        if (cutIdx > 198)
+            198 => cutIdx;
+
+        1.5::second => dur fadeDur;
+        now => time start;
+        200 => int N;
+
+        // spawn two truly independent half-lines as children of this GGen
+        MeshLines halfA --> this;
+        MeshLines halfB --> this;
+        halfA.width(line.width());
+        halfB.width(line.width());
+        // copy world x/y from original (z scrolls, synced each frame below)
+        halfA.posX(line.posX());
+        halfA.posY(line.posY());
+        halfB.posX(line.posX());
+        halfB.posY(line.posY());
+
+        // hide original immediately — the two halves take over visually
+        line.visibility(0.);
+
+        while (now - start < fadeDur) {
+            GG.nextFrame() => now;
+            (now - start) / fadeDur => float t;
+            1. - t => float alpha;
+            Math.pow(t, 1.5) * 0.5 => float drift; // slow start, fast tear
+
+            // half A: right/top side (indices 0 .. cutIdx-1)
+            // drift added ON TOP of the actual curved positions
+            vec3 ptsA[cutIdx];
+            for (0 => int i; i < cutIdx; i++) {
+                if (direction == 0)
+                    @(basePts[i].x + drift, basePts[i].y, basePts[i].z) => ptsA[i];
+                else
+                    @(basePts[i].x, basePts[i].y + drift, basePts[i].z) => ptsA[i];
+            }
+            ptsA => halfA.positions;
+
+            // half B: left/bottom side (indices cutIdx .. N-1)
+            N - cutIdx => int lenB;
+            vec3 ptsB[lenB];
+            for (0 => int i; i < lenB; i++) {
+                basePts[i + cutIdx] => vec3 bp;
+                if (direction == 0)
+                    @(bp.x - drift, bp.y, bp.z) => ptsB[i];
+                else
+                    @(bp.x, bp.y - drift, bp.z) => ptsB[i];
+            }
+            ptsB => halfB.positions;
+
+            // keep halves at the same scrolled z as the original for depth color
+            line.posZ() => float z;
+            halfA.posZ(z);
+            halfB.posZ(z);
+            (z - MIN_Z) / (MAX_Z - MIN_Z) => float zScale;
+            Math.max(0., zScale * alpha) => float a;
+            @(color.x, color.y, color.z, a) => halfA.color;
+            @(color.x, color.y, color.z, a) => halfB.color;
+        }
+
+        // permanently hide both halves
+        halfA.visibility(0.);
+        halfB.visibility(0.);
+    }
+
+    fun void drawLine(int direction, MeshLines @line, vec3 p0, vec3 p1, vec3 p2, vec3 p3) {
         now => time start;
         0.5::second => dur transTime;
-        Lib.random(@(5., 0, 0)) => vec3 px0;
-        Lib.random(@(1.7, 0, 0)) => vec3 px1;
-        Lib.random(@(-1.7, 0, 0)) => vec3 px2;
-        Lib.random(@(-5., 0, 0)) => vec3 px3;
-        Lib.random(@(0., 5., 0)) => vec3 py0;
-        Lib.random(@(0., 1.7, 0)) => vec3 py1;
-        Lib.random(@(0., -1.7, 0)) => vec3 py2;
-        Lib.random(@(0., -5, 0)) => vec3 py3;
-        // drawing animation
+        // drawing animation: control points start spread far apart and converge to p0..p3
         while (now - start < transTime) {
             GG.nextFrame() => now;
             (now - start) / transTime => float t;
             if (direction == 0) {
-                Lib.bezier(px0, px1 + @(3.3 * (1 - t), 0, 0), px2 + @(6.6 * (1 - t), 0, 0),
-                           px3 + @(10 * (1 - t), 0, 0), 200) => line.positions;
+                Lib.bezier(p0, p1 + @(3.3 * (1 - t), 0, 0), p2 + @(6.6 * (1 - t), 0, 0),
+                           p3 + @(10 * (1 - t), 0, 0), 200) => line.positions;
             } else {
-                Lib.bezier(py0, py1 + @(0, 3.3 * (1 - t), 0), py2 + @(0, 6.6 * (1 - t), 0),
-                           py3 + @(0, 10 * (1 - t), 0), 200) => line.positions;
+                Lib.bezier(p0, p1 + @(0, 3.3 * (1 - t), 0), p2 + @(0, 6.6 * (1 - t), 0),
+                           p3 + @(0, 10 * (1 - t), 0), 200) => line.positions;
             }
         }
     }
