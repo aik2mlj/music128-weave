@@ -34,6 +34,7 @@ fun float gt2y(float gt) { return Math.map2(gt, 0., 1., MIN_Y, MAX_Y); }
 Thread threads[CHANNELS];
 float allLinePos[0];
 int allLineDir[0];
+int allCuts[0];
 
 
 for (0 => int i; i < CHANNELS; ++i) {
@@ -190,12 +191,29 @@ fun void cutThread(int direction) {
             }
         }
     }
-
     if (minN >= 0) {
         threads[minN].cut(targetNote);
-
+        1 => allCuts[threads[minN].idx];
         // send to server which line to cut
         sendCutLine(threads[minN].idx, direction);
+    } else {
+        1000 => minDiff;
+        -1 => minN;
+        // then find the closest line from allLinePos
+        for (0 => int i; i < allLinePos.size(); ++i) {
+            if (allCuts[i] == 0 && allLineDir[i] == direction) {
+                allLinePos[i] => float pos;
+                if (Math.abs(provider.getNote(pos) - targetNote) < minDiff) {
+                    Math.abs(provider.getNote(pos) - targetNote) => minDiff;
+                    i => minN;
+                }
+            }
+        }
+        if (minN >= 0) {
+            1 => allCuts[minN];
+            // send to server which line to cut
+            sendCutLine(minN, direction);
+        }
     }
 }
 
@@ -235,6 +253,7 @@ fun void addThread(int direction) {
 
     allLinePos << pos;
     allLineDir << direction;
+    allCuts << 0;
 
     provider.getNote(pos) => note;
 
