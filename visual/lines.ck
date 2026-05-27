@@ -9,8 +9,8 @@ public class Lines extends GGen {
     2 * 16 / 9 => static float MAX_X;
     -2 => static float MIN_Y;
     2 => static float MAX_Y;
-    -10 => static float MIN_Z;
-    5 => static float MAX_Z;
+    -15 => static float MIN_Z;
+    0 => static float MAX_Z;
 
     16 => static int MAX_PLAYER_NUM;
     -10000 => static float DELETE;
@@ -232,7 +232,7 @@ public class Lines extends GGen {
 
     fun void scrollLine(int direction, MeshLines @line) {
         0.5 => float speed;
-        -5. => float z0;
+        -8. => float z0;
         line.posZ(z0);
         // scrolling
         now => time start;

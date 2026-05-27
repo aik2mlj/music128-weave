@@ -25,7 +25,7 @@ GG.scene().light() @=> GLight light;
 // // set an orbit camera as the main camera
 GOrbitCamera cam => GG.scene().camera;
 // // position the camera
-cam.posZ(5);
+0.00001 => cam.posZ;
 // cam.orthographic();
 
 BPM bpm;
