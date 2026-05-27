@@ -41,6 +41,7 @@ OscMsg msg;
 // create an address in the receiver, expect an int and a float
 oin.addAddress("/client/addline");
 oin.addAddress("/client/linepos");
+oin.addAddress("/client/cutline");
 
 // OscOut multicast
 // multicast address sends to all machines on local network
@@ -96,6 +97,11 @@ fun void clientListener() {
                 if (size > 0) {
                     lines.updatePositions(id, direction, pos);
                 }
+            } else if (msg.address == "/client/cutline") {
+                msg.getInt(0) => int id;
+                msg.getInt(1) => int idx;
+                msg.getInt(2) => int direction;
+                lines.cutLine(id, idx, direction);
             }
         }
     }

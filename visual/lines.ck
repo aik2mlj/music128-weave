@@ -13,11 +13,10 @@ public class Lines extends GGen {
     5 => static float MAX_Z;
 
     16 => static int MAX_PLAYER_NUM;
+    -10000 => static float DELETE;
     MeshLines @allLines[MAX_PLAYER_NUM][0];
-    float vertPositions[0];  // world-space x of for vertical lines
-    float horizPositions[0]; // for horizontal lines
-    0 => int vertCount;
-    0 => int horizCount;
+    float vertPositions[MAX_PLAYER_NUM][0];  // world-space x of for vertical lines
+    float horizPositions[MAX_PLAYER_NUM][0]; // for horizontal lines
 
     vec3 color;
 
@@ -43,12 +42,12 @@ public class Lines extends GGen {
 
         if (direction == 0) {
             line.posY(gt2y(pos));
-            horizCount++;
-            horizPositions << gt2y(pos);
+            horizPositions[id] << gt2y(pos);
+            vertPositions[id] << DELETE - 1;
         } else {
             line.posX(gt2x(pos));
-            vertCount++;
-            vertPositions << gt2x(pos);
+            horizPositions[id] << DELETE - 1;
+            vertPositions[id] << gt2x(pos);
         }
 
         spork ~ drawLine(direction, line);
@@ -56,6 +55,26 @@ public class Lines extends GGen {
         spork ~ animateWidth(line);
         spork ~ scrollLine(direction, line);
         spork ~ colorizeLine(line);
+
+        updateSegs();
+    }
+
+    fun void cutLine(int id, int idx, int direction) {
+        <<< "cutline" >>>;
+        if (idx < 0 || idx >= allLines[id].size()) {
+            <<< "\twarning: invalid idx", idx >>>;
+            return;
+        }
+
+        // remove the line
+        allLines[id][idx] --< this;
+
+        // allLines[id].erase(idx);
+        if (direction == 0) {
+            DELETE - 1 => horizPositions[id][idx];
+        } else {
+            DELETE - 1 => vertPositions[id][idx];
+        }
 
         updateSegs();
     }
@@ -135,14 +154,17 @@ public class Lines extends GGen {
                 allLines[id][i].posX(gt2x(pos[i]));
         }
     }
-    fun dur[] computeSegments(float positions[], int count) {
-        float bounds[count + 2]; // line locations including the outbounds
+    fun dur[] computeSegments(float positions[][]) {
+        float bounds[0]; // line locations including the outbounds
 
-        MIN_X => bounds[0];
-        MAX_X => bounds[count + 1];
+        bounds << MIN_X;
+        bounds << MAX_X;
 
-        for (0 => int i; i < count; i++)
-            positions[i] => bounds[i + 1];
+        for (0 => int i; i < positions.size(); ++i) {
+            for (0 => int j; j < positions[i].size(); ++j)
+                if (positions[i][j] > DELETE)
+                    bounds << positions[i][j];
+        }
 
         // insertion sort line locations
         for (1 => int i; i < bounds.size(); i++) {
@@ -156,7 +178,7 @@ public class Lines extends GGen {
         }
 
         MAX_X - MIN_X => float totalWidth;
-        dur segments[count + 1];
+        dur segments[bounds.size() - 1];
         // find the dur of each segment
         for (0 => int i; i < segments.size(); i++)
             ((bounds[i + 1] - bounds[i]) / totalWidth) * bpm.quarterNote => segments[i];
@@ -165,8 +187,8 @@ public class Lines extends GGen {
 
     fun void updateSegs() {
         <<< "updateSegs" >>>;
-        computeSegments(vertPositions, vertCount) @=> dur segXs[];
-        computeSegments(horizPositions, horizCount) @=> dur segYs[];
+        computeSegments(vertPositions) @=> dur segXs[];
+        computeSegments(horizPositions) @=> dur segYs[];
 
         // send osc
         sendRhythmSegs(segXs, segYs);

@@ -25,6 +25,8 @@ public class Thread {
     float pos;     // store the x (for vertical) and y (for horizontal)
     vec3 color;
 
+    int idx;
+    0 => int is_on;
 
     fun void init(Osc timbre) {
         timbre @=> osc;
@@ -66,14 +68,13 @@ public class Thread {
     }
 
 
-    StifKarp karp => ADSR karpEnv => NRev karpRev;
+    StifKarp karp => ADSR karpEnv => NRev karpRev => dac;
 
     fun void cut(int inputNote) {
         this.off();
 
-        karpRev => dac;
-        rev.gain(0.5);
-        rev.mix(0.2);
+        karpRev.gain(0.5);
+        karpRev.mix(0.2);
         Math.random2f(0, 1) => karp.pickupPosition;
         Math.random2f(0, 0.5) => karp.sustain;
         Math.random2f(0, 1) => karp.stretch;
@@ -94,11 +95,16 @@ public class Thread {
     fun float freq() { return osc.freq(); }
     fun void freq(float f) { osc.freq(f); }
 
-    fun void on() { env.keyOn(); }
+    fun void on() {
+        env.keyOn();
+        1 => is_on;
+    }
 
-    fun int isOn() { return env.value() > 0. || rhythmShred != null; }
+    fun int isOn() { return is_on; }
+
     fun void off() {
         env.keyOff();
+        0 => is_on;
         if (animateShred != null) {
             animateShred.exit();
             null @=> animateShred;

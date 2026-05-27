@@ -179,15 +179,33 @@ fun void cutThread(int direction) {
     else if (direction == 1)
         provider.getNote(gt.axis[2]) => targetNote;
 
+    1000 => int minDiff;
+    -1 => int minN;
+    // get the thread that is closest to the target note
     for (0 => int i; i < CHANNELS; i++) {
-        if (threads[i].isOn() && threads[i].direction == direction &&
-            provider.getNote(threads[i].pos) == targetNote) {
-
-            threads[i].cut(targetNote);
+        if (threads[i].isOn() && threads[i].direction == direction) {
+            if (Math.abs(provider.getNote(threads[i].pos) - targetNote) < minDiff) {
+                Math.abs(provider.getNote(threads[i].pos) - targetNote) => minDiff;
+                i => minN;
+            }
         }
+    }
+
+    if (minN >= 0) {
+        threads[minN].cut(targetNote);
+
+        // send to server which line to cut
+        sendCutLine(threads[minN].idx, direction);
     }
 }
 
+fun void sendCutLine(int idx, int direction) {
+    xmit.start("/client/cutline");
+    ID => xmit.add;
+    idx => xmit.add;
+    direction => xmit.add;
+    xmit.send();
+}
 
 fun void addThread(int direction) {
     <<< "addthread" >>>;
@@ -213,6 +231,7 @@ fun void addThread(int direction) {
     pos => thread.pos;
     direction => thread.direction;
     color => thread.color;
+    threadNum - 1 => thread.idx;
 
     allLinePos << pos;
     allLineDir << direction;
