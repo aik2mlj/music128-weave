@@ -2,10 +2,10 @@
 @import "../sounds/bpm.ck"
 
 class LineStruct {
-    MeshLines line;
-    float vertPositions, horizPositions;
-    vec3 lineCtrl;
-    vec3 color;
+    MeshLines @line;
+    float vertPos, horizPos; // one is the line's world coord, the other is DELETE-1
+    vec3 ctrl[0];            // 4 bezier control points
+    vec3 color;              // per-line color
 }
 
 public class Lines extends GGen {
@@ -23,13 +23,7 @@ public class Lines extends GGen {
     -10000 => static float DELETE;
     -8. => static float z0;
 
-    // LineStruct allLines[MAX_PLAYER_NUM][0];
-    MeshLines @allLines[MAX_PLAYER_NUM][0];
-    float vertPositions[MAX_PLAYER_NUM][0];  // world-space x of for vertical lines
-    float horizPositions[MAX_PLAYER_NUM][0]; // for horizontal lines
-    vec3 lineCtrl[MAX_PLAYER_NUM][0];        // 4 bezier ctrl pts per line (base = 4*idx)
-
-    vec3 color;
+    LineStruct allLines[MAX_PLAYER_NUM][0];
 
     OscOut @xmit;
     BPM bpm;
@@ -57,19 +51,20 @@ public class Lines extends GGen {
         <<< "addline" >>>;
         MeshLines line --> GGen line_tf --> this;
 
-        allLines[id] << line;
-
-        color => this.color;
+        LineStruct ls;
+        line @=> ls.line;
+        color => ls.color;
         line.width(LINE_WIDTH);
+        line.posZ(z0);
 
         if (direction == 0) {
             line.posY(gt2y(pos));
-            horizPositions[id] << gt2y(pos);
-            vertPositions[id] << DELETE - 1;
+            gt2y(pos) => ls.horizPos;
+            DELETE - 1 => ls.vertPos;
         } else {
             line.posX(gt2x(pos));
-            horizPositions[id] << DELETE - 1;
-            vertPositions[id] << gt2x(pos);
+            DELETE - 1 => ls.horizPos;
+            gt2x(pos) => ls.vertPos;
         }
 
         // generate and store bezier control points for this line
@@ -85,16 +80,17 @@ public class Lines extends GGen {
             Lib.random(@(0., -1.7, 0)) => p2;
             Lib.random(@(0., -5., 0)) => p3;
         }
-        lineCtrl[id] << p0 << p1 << p2 << p3;
+        ls.ctrl << p0 << p1 << p2 << p3;
 
-        line.posZ(z0);
+        allLines[id] << ls;
+        allLines[id][allLines[id].size() - 1] @=> LineStruct @lsRef;
 
-        spork ~ drawLine(direction, line, p0, p1, p2, p3);
+        spork ~ drawLine(direction, lsRef);
         // TODO: currectly animate is going on forever
-        spork ~ animateLine(line);
+        spork ~ animateLine(lsRef);
         // spork ~ scrollLine(direction, line);
         spork ~ rotateLines();
-        spork ~ colorizeLine(line);
+        spork ~ colorizeLine(lsRef);
 
         updateSegs();
         return line_tf;
@@ -107,24 +103,22 @@ public class Lines extends GGen {
             return;
         }
 
-        // fancy cut animation: split at random position, drift apart, fade away
-        4 * idx => int base;
-        spork ~ cutAnimation(allLines[id][idx], direction, lineCtrl[id][base],
-                            lineCtrl[id][base + 1], lineCtrl[id][base + 2], lineCtrl[id][base + 3]);
+        allLines[id][idx] @=> LineStruct @ls;
+
+        spork ~ cutAnimation(ls, direction);
 
         // allLines[id].erase(idx);
-        if (direction == 0) {
-            DELETE - 1 => horizPositions[id][idx];
-        } else {
-            DELETE - 1 => vertPositions[id][idx];
-        }
+        if (direction == 0)
+            DELETE - 1 => ls.horizPos;
+        else
+            DELETE - 1 => ls.vertPos;
 
         updateSegs();
     }
 
-    fun void cutAnimation(MeshLines @line, int direction, vec3 p0, vec3 p1, vec3 p2, vec3 p3) {
+    fun void cutAnimation(LineStruct @ls, int direction) {
         // reconstruct the actual settled curve — this is the base for the split
-        Lib.bezier(p0, p1, p2, p3, 200) @=> vec3 basePts[];
+        Lib.bezier(ls.ctrl[0], ls.ctrl[1], ls.ctrl[2], ls.ctrl[3], 200) @=> vec3 basePts[];
 
         // random split point; clamp so each half gets at least 2 points
         Math.randomf() => float splitT;
@@ -142,15 +136,15 @@ public class Lines extends GGen {
         // spawn two independent half-lines as children of this GGen
         MeshLines halfA --> this;
         MeshLines halfB --> this;
-        halfA.width(line.width());
-        halfB.width(line.width());
-        halfA.posX(line.posX());
-        halfA.posY(line.posY());
-        halfB.posX(line.posX());
-        halfB.posY(line.posY());
+        halfA.width(ls.line.width());
+        halfB.width(ls.line.width());
+        halfA.posX(ls.line.posX());
+        halfA.posY(ls.line.posY());
+        halfB.posX(ls.line.posX());
+        halfB.posY(ls.line.posY());
 
         // hide original immediately — the two halves take over visually
-        line.visibility(0.);
+        ls.line.visibility(0.);
 
         while (now - start < totalDur) {
             GG.nextFrame() => now;
@@ -174,11 +168,8 @@ public class Lines extends GGen {
             // ---- half A: right/top side (indices 0 .. cutIdx-1) ----
             vec3 ptsA[cutIdx];
             for (0 => int i; i < cutIdx; i++) {
-                // distance from anchored end (0) to cut end (1)
                 i $ float / (cutIdx - 1) => float distToCut;
                 distToCut * drift => float mainDrift;
-
-                // curl: perpendicular fray, strongest right at the cut end
                 Math.pow(distToCut, 2.5) * drift * 0.35 => float curl;
                 Math.sin(i * 127.1 + cutIdx * 31.7) => float fray;
 
@@ -193,7 +184,6 @@ public class Lines extends GGen {
             N - cutIdx => int lenB;
             vec3 ptsB[lenB];
             for (0 => int i; i < lenB; i++) {
-                // distance from cut end (1) to anchored end (0)
                 1.0 - (i $ float / (lenB - 1)) => float distToCut;
                 distToCut * drift => float mainDrift;
                 Math.pow(distToCut, 2.5) * drift * 0.35 => float curl;
@@ -208,13 +198,13 @@ public class Lines extends GGen {
             ptsB => halfB.positions;
 
             // ---- color matches original's z-depth, faded by alpha ----
-            line.posZ() => float z;
+            ls.line.posZ() => float z;
             halfA.posZ(z);
             halfB.posZ(z);
             (z - MIN_Z) / (MAX_Z - MIN_Z) => float zScale;
             Math.max(0., zScale * alpha) => float a;
-            @(color.x, color.y, color.z, a) => halfA.color;
-            @(color.x, color.y, color.z, a) => halfB.color;
+            @(ls.color.x, ls.color.y, ls.color.z, a) => halfA.color;
+            @(ls.color.x, ls.color.y, ls.color.z, a) => halfB.color;
         }
 
         // permanently hide both halves
@@ -222,40 +212,37 @@ public class Lines extends GGen {
         halfB.visibility(0.);
     }
 
-    fun void drawLine(int direction, MeshLines @line, vec3 p0, vec3 p1, vec3 p2, vec3 p3) {
+    fun void drawLine(int direction, LineStruct @ls) {
         now => time start;
         0.5::second => dur transTime;
-        // drawing animation: control points start spread far apart and converge to p0..p3
+        // drawing animation: control points start spread far apart and converge to stored ctrl
         while (now - start < transTime) {
             GG.nextFrame() => now;
             (now - start) / transTime => float t;
             if (direction == 0) {
-                Lib.bezier(p0, p1 + @(3.3 * (1 - t), 0, 0), p2 + @(6.6 * (1 - t), 0, 0),
-                           p3 + @(10 * (1 - t), 0, 0), 200) => line.positions;
+                Lib.bezier(ls.ctrl[0], ls.ctrl[1] + @(3.3 * (1 - t), 0, 0),
+                           ls.ctrl[2] + @(6.6 * (1 - t), 0, 0), ls.ctrl[3] + @(10 * (1 - t), 0, 0),
+                           200) => ls.line.positions;
             } else {
-                Lib.bezier(p0, p1 + @(0, 3.3 * (1 - t), 0), p2 + @(0, 6.6 * (1 - t), 0),
-                           p3 + @(0, 10 * (1 - t), 0), 200) => line.positions;
+                Lib.bezier(ls.ctrl[0], ls.ctrl[1] + @(0, 3.3 * (1 - t), 0),
+                           ls.ctrl[2] + @(0, 6.6 * (1 - t), 0), ls.ctrl[3] + @(0, 10 * (1 - t), 0),
+                           200) => ls.line.positions;
             }
         }
     }
 
-    fun void animateLine(MeshLines @line) {
+    fun void animateLine(LineStruct @ls) {
         now => time t0;
-        // (2 * Math.PI) / (10 * (beatLen / 1::second)) => float speed;
         1 => float speed;
-        0.2 => float dcolor;
         while (true) {
             GG.nextFrame() => now;
             (now - t0) / 1::second => float t;
             Math.sin(t * speed) => float inc;
-            LINE_WIDTH + inc * 0.005 => line.width;
-            // @(LINE_COLOR.x + (inc + Math.randomf()) * dcolor,
-            //   LINE_COLOR.y + (inc + Math.randomf()) * dcolor,
-            //   LINE_COLOR.z + (inc + Math.randomf()) * dcolor) => line.color;
+            LINE_WIDTH + inc * 0.005 => ls.line.width;
             Math.random2(-1, 1) * 0.0005 => float rot;
-            line.rotX(line.rotX() + rot);
-            line.rotY(line.rotY() + rot);
-            line.rotZ(line.rotZ() + rot);
+            ls.line.rotX(ls.line.rotX() + rot);
+            ls.line.rotY(ls.line.rotY() + rot);
+            ls.line.rotZ(ls.line.rotZ() + rot);
         }
     }
 
@@ -279,38 +266,38 @@ public class Lines extends GGen {
         }
     }
 
-    fun void colorizeLine(MeshLines @line) {
+    fun void colorizeLine(LineStruct @ls) {
         while (true) {
             GG.nextFrame() => now;
-            line.posZ() => float z;
-            // color the line: the closer to MIN_Z the darker
-            // the closer to MAX_Z the brighter
+            ls.line.posZ() => float z;
             (z - MIN_Z) / (MAX_Z - MIN_Z) => float zScale;
-            @(color.x, color.y, color.z, zScale) => line.color;
+            @(ls.color.x, ls.color.y, ls.color.z, zScale) => ls.line.color;
         }
     }
 
     fun void updatePositions(int id, int direction[], float pos[]) {
         for (int i; i < allLines[id].size(); i++) {
             if (direction[i] == 0)
-                allLines[id][i].posY(gt2y(pos[i]));
+                allLines[id][i].line.posY(gt2y(pos[i]));
             else
-                allLines[id][i].posX(gt2x(pos[i]));
+                allLines[id][i].line.posX(gt2x(pos[i]));
         }
     }
-    fun dur[] computeSegments(float positions[][]) {
-        float bounds[0]; // line locations including the outbounds
-
+    fun dur[] computeSegments(int axis) {
+        // axis 0 = vert (x for vertical lines), axis 1 = horiz (y for horizontal)
+        float bounds[0];
         bounds << MIN_X;
         bounds << MAX_X;
 
-        for (0 => int i; i < positions.size(); ++i) {
-            for (0 => int j; j < positions[i].size(); ++j)
-                if (positions[i][j] > DELETE)
-                    bounds << positions[i][j];
+        for (0 => int id; id < MAX_PLAYER_NUM; id++) {
+            for (0 => int i; i < allLines[id].size(); i++) {
+                axis ? allLines[id][i].horizPos : allLines[id][i].vertPos => float p;
+                if (p > DELETE)
+                    bounds << p;
+            }
         }
 
-        // insertion sort line locations
+        // insertion sort
         for (1 => int i; i < bounds.size(); i++) {
             bounds[i] => float key;
             i - 1 => int j;
@@ -323,7 +310,6 @@ public class Lines extends GGen {
 
         MAX_X - MIN_X => float totalWidth;
         dur segments[bounds.size() - 1];
-        // find the dur of each segment
         for (0 => int i; i < segments.size(); i++)
             ((bounds[i + 1] - bounds[i]) / totalWidth) * bpm.quarterNote => segments[i];
         return segments;
@@ -331,10 +317,8 @@ public class Lines extends GGen {
 
     fun void updateSegs() {
         <<< "updateSegs" >>>;
-        computeSegments(vertPositions) @=> dur segXs[];
-        computeSegments(horizPositions) @=> dur segYs[];
-
-        // send osc
+        computeSegments(0) @=> dur segXs[];
+        computeSegments(1) @=> dur segYs[];
         sendRhythmSegs(segXs, segYs);
     }
 
