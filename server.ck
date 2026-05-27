@@ -59,6 +59,7 @@ xmit.dest(hostname, port);
 // address that will send: /server/cycle, /server/segs
 
 /// ---------- VISUAL ---------- /////
+1 => int randomRot;
 
 Lines lines(xmit, bpm) --> GG.scene();
 
@@ -66,7 +67,7 @@ Lines lines(xmit, bpm) --> GG.scene();
 Fireflies fireflies --> GG.scene();
 
 // prepopulate
-lines.spawnLines_randomRot(100);
+// lines.spawnLines_randomRot(100);
 
 /// ---------- CONTROL ---------- /////
 
@@ -87,7 +88,7 @@ fun void clientListener() {
                 msg.getFloat(4) => float cy;
                 msg.getFloat(5) => float cz;
                 @(cx, cy, cz) => vec3 color;
-                lines.addLine(id, direction, pos, color);
+                lines.addLine(id, direction, pos, color, randomRot);
             } else if (msg.address == "/client/linepos") {
                 msg.getInt(0) => int id;
                 msg.getInt(1) => int size;

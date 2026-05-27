@@ -3,6 +3,7 @@
 
 class LineStruct {
     MeshLines @line;
+    GGen tf;
     float vertPos, horizPos; // one is the line's world coord, the other is DELETE-1
     vec3 ctrl[0];            // 4 bezier control points
     vec3 color;              // per-line color
@@ -36,23 +37,23 @@ public class Lines extends GGen {
     fun float gt2x(float gt) { return Math.map2(gt, 0., 1., MIN_X, MAX_X); }
     fun float gt2y(float gt) { return Math.map2(gt, 0., 1., MIN_Y, MAX_Y); }
 
-    fun void spawnLines_randomRot(int num) {
-        // spawn initially num of lines that are positioned randomly and rotate randomly
-        for (0 => int i; i < num; i++) {
-            Math.random2(0, 1) => int direction;
-            Math.randomf() => float pos;
-            @(Math.randomf(), Math.randomf(), Math.randomf()) => vec3 color;
-            addLine(MAX_PLAYER_NUM - 1, direction, pos, color) @=> GGen @line_tf;
-            line_tf.rotY(Math.random2f(-0.5, 0.5));
-        }
-    }
+    // fun void spawnLines_randomRot(int num) {
+    //     // spawn initially num of lines that are positioned randomly and rotate randomly
+    //     for (0 => int i; i < num; i++) {
+    //         Math.random2(0, 1) => int direction;
+    //         Math.randomf() => float pos;
+    //         @(Math.randomf(), Math.randomf(), Math.randomf()) => vec3 color;
+    //         addLine(MAX_PLAYER_NUM - 1, direction, pos, color, 1);
+    //     }
+    // }
 
-    fun GGen @addLine(int id, int direction, float pos, vec3 color) {
+    fun GGen @addLine(int id, int direction, float pos, vec3 color, int randomRot) {
         <<< "addline" >>>;
         MeshLines line --> GGen line_tf --> this;
 
         LineStruct ls;
         line @=> ls.line;
+        line_tf @=> ls.tf;
         color => ls.color;
         line.width(LINE_WIDTH);
         line.posZ(z0);
@@ -82,15 +83,18 @@ public class Lines extends GGen {
         }
         ls.ctrl << p0 << p1 << p2 << p3;
 
-        allLines[id] << ls;
-        allLines[id][allLines[id].size() - 1] @=> LineStruct @lsRef;
+        if (randomRot) {
+            Math.random2f(0, 2 * Math.pi) => line_tf.rotateY;
+        }
 
-        spork ~ drawLine(direction, lsRef);
+        allLines[id] << ls;
+
+        spork ~ drawLine(direction, line, ls.ctrl);
         // TODO: currectly animate is going on forever
-        spork ~ animateLine(lsRef);
+        spork ~ animateLine(line);
         // spork ~ scrollLine(direction, line);
         spork ~ rotateLines();
-        spork ~ colorizeLine(lsRef);
+        spork ~ colorizeLine(line, color);
 
         updateSegs();
         return line_tf;
@@ -105,7 +109,7 @@ public class Lines extends GGen {
 
         allLines[id][idx] @=> LineStruct @ls;
 
-        spork ~ cutAnimation(ls, direction);
+        spork ~ cutAnimation(ls.line, ls.tf, ls.ctrl, ls.color, direction);
 
         // allLines[id].erase(idx);
         if (direction == 0)
@@ -116,9 +120,8 @@ public class Lines extends GGen {
         updateSegs();
     }
 
-    fun void cutAnimation(LineStruct @ls, int direction) {
-        // reconstruct the actual settled curve — this is the base for the split
-        Lib.bezier(ls.ctrl[0], ls.ctrl[1], ls.ctrl[2], ls.ctrl[3], 200) @=> vec3 basePts[];
+    fun void cutAnimation(MeshLines @line, GGen @tf, vec3 ctrl[], vec3 lineColor, int direction) {
+        Lib.bezier(ctrl[0], ctrl[1], ctrl[2], ctrl[3], 200) @=> vec3 basePts[];
 
         // random split point; clamp so each half gets at least 2 points
         Math.randomf() => float splitT;
@@ -133,18 +136,18 @@ public class Lines extends GGen {
         now => time start;
         200 => int N;
 
-        // spawn two independent half-lines as children of this GGen
-        MeshLines halfA --> this;
-        MeshLines halfB --> this;
-        halfA.width(ls.line.width());
-        halfB.width(ls.line.width());
-        halfA.posX(ls.line.posX());
-        halfA.posY(ls.line.posY());
-        halfB.posX(ls.line.posX());
-        halfB.posY(ls.line.posY());
+        // spawn halves under the same transform as the original line
+        MeshLines halfA --> tf;
+        MeshLines halfB --> tf;
+        halfA.width(line.width());
+        halfB.width(line.width());
+        halfA.posX(line.posX());
+        halfA.posY(line.posY());
+        halfB.posX(line.posX());
+        halfB.posY(line.posY());
 
         // hide original immediately — the two halves take over visually
-        ls.line.visibility(0.);
+        line.visibility(0.);
 
         while (now - start < totalDur) {
             GG.nextFrame() => now;
@@ -198,13 +201,13 @@ public class Lines extends GGen {
             ptsB => halfB.positions;
 
             // ---- color matches original's z-depth, faded by alpha ----
-            ls.line.posZ() => float z;
+            line.posZ() => float z;
             halfA.posZ(z);
             halfB.posZ(z);
             (z - MIN_Z) / (MAX_Z - MIN_Z) => float zScale;
             Math.max(0., zScale * alpha) => float a;
-            @(ls.color.x, ls.color.y, ls.color.z, a) => halfA.color;
-            @(ls.color.x, ls.color.y, ls.color.z, a) => halfB.color;
+            @(lineColor.x, lineColor.y, lineColor.z, a) => halfA.color;
+            @(lineColor.x, lineColor.y, lineColor.z, a) => halfB.color;
         }
 
         // permanently hide both halves
@@ -212,37 +215,34 @@ public class Lines extends GGen {
         halfB.visibility(0.);
     }
 
-    fun void drawLine(int direction, LineStruct @ls) {
+    fun void drawLine(int direction, MeshLines @line, vec3 ctrl[]) {
         now => time start;
         0.5::second => dur transTime;
-        // drawing animation: control points start spread far apart and converge to stored ctrl
         while (now - start < transTime) {
             GG.nextFrame() => now;
             (now - start) / transTime => float t;
             if (direction == 0) {
-                Lib.bezier(ls.ctrl[0], ls.ctrl[1] + @(3.3 * (1 - t), 0, 0),
-                           ls.ctrl[2] + @(6.6 * (1 - t), 0, 0), ls.ctrl[3] + @(10 * (1 - t), 0, 0),
-                           200) => ls.line.positions;
+                Lib.bezier(ctrl[0], ctrl[1] + @(3.3 * (1 - t), 0, 0),
+                           ctrl[2] + @(6.6 * (1 - t), 0, 0), ctrl[3] + @(10 * (1 - t), 0, 0), 200) => line.positions;
             } else {
-                Lib.bezier(ls.ctrl[0], ls.ctrl[1] + @(0, 3.3 * (1 - t), 0),
-                           ls.ctrl[2] + @(0, 6.6 * (1 - t), 0), ls.ctrl[3] + @(0, 10 * (1 - t), 0),
-                           200) => ls.line.positions;
+                Lib.bezier(ctrl[0], ctrl[1] + @(0, 3.3 * (1 - t), 0),
+                           ctrl[2] + @(0, 6.6 * (1 - t), 0), ctrl[3] + @(0, 10 * (1 - t), 0), 200) => line.positions;
             }
         }
     }
 
-    fun void animateLine(LineStruct @ls) {
+    fun void animateLine(MeshLines @line) {
         now => time t0;
         1 => float speed;
         while (true) {
             GG.nextFrame() => now;
             (now - t0) / 1::second => float t;
             Math.sin(t * speed) => float inc;
-            LINE_WIDTH + inc * 0.005 => ls.line.width;
+            LINE_WIDTH + inc * 0.005 => line.width;
             Math.random2(-1, 1) * 0.0005 => float rot;
-            ls.line.rotX(ls.line.rotX() + rot);
-            ls.line.rotY(ls.line.rotY() + rot);
-            ls.line.rotZ(ls.line.rotZ() + rot);
+            line.rotX(line.rotX() + rot);
+            line.rotY(line.rotY() + rot);
+            line.rotZ(line.rotZ() + rot);
         }
     }
 
@@ -266,12 +266,12 @@ public class Lines extends GGen {
         }
     }
 
-    fun void colorizeLine(LineStruct @ls) {
+    fun void colorizeLine(MeshLines @line, vec3 c) {
         while (true) {
             GG.nextFrame() => now;
-            ls.line.posZ() => float z;
+            line.posZ() => float z;
             (z - MIN_Z) / (MAX_Z - MIN_Z) => float zScale;
-            @(ls.color.x, ls.color.y, ls.color.z, zScale) => ls.line.color;
+            @(c.x, c.y, c.z, zScale) => line.color;
         }
     }
 
