@@ -68,23 +68,6 @@ public class Thread {
     }
 
 
-    StifKarp karp => ADSR karpEnv => NRev karpRev => dac;
-
-    fun void cut(int inputNote) {
-        this.off();
-
-        karpRev.gain(0.5);
-        karpRev.mix(0.2);
-        Math.random2f(0, 1) => karp.pickupPosition;
-        Math.random2f(0, 0.5) => karp.sustain;
-        Math.random2f(0, 1) => karp.stretch;
-        karpEnv.keyOn();
-        karpEnv.gain(0.5);
-
-        Std.mtof(inputNote) => karp.freq;
-        0.5 => karp.pluck;
-    }
-
     fun void connect2dac(int chan) { rev => dac.chan(chan % dac.channels()); }
 
     //    fun void connect2dac(int chan) { rev => dac.chan(chan); }

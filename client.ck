@@ -7,6 +7,7 @@
 @import "lib/meshlines.ck"
 @import "lib/lib.ck"
 @import "sounds/thread.ck"
+@import "sounds/thread_cut.ck"
 
 NoteProvider provider;
 Chords chords;
@@ -32,6 +33,7 @@ fun float gt2y(float gt) { return Math.map2(gt, 0., 1., MIN_Y, MAX_Y); }
 
 // instantiate sound threads
 Thread threads[CHANNELS];
+ThreadCut threadCut;
 float allLinePos[0];
 int allLineDir[0];
 int allCuts[0];
@@ -192,7 +194,8 @@ fun void cutThread(int direction) {
         }
     }
     if (minN >= 0) {
-        threads[minN].cut(targetNote);
+        threads[minN].off();
+        threadCut.cut(targetNote);
         1 => allCuts[threads[minN].idx];
         // send to server which line to cut
         sendCutLine(threads[minN].idx, direction);
@@ -211,6 +214,7 @@ fun void cutThread(int direction) {
         }
         if (minN >= 0) {
             1 => allCuts[minN];
+            threadCut.cut(targetNote);
             // send to server which line to cut
             sendCutLine(minN, direction);
         }
