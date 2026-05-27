@@ -109,16 +109,16 @@ public class Lines extends GGen {
         if (cutIdx > 198)
             198 => cutIdx;
 
-        1.5::second => dur fadeDur;
+        1.5::second => dur totalDur;
+        0.18::second => dur snapDur; // tension-release snap window
         now => time start;
         200 => int N;
 
-        // spawn two truly independent half-lines as children of this GGen
+        // spawn two independent half-lines as children of this GGen
         MeshLines halfA --> this;
         MeshLines halfB --> this;
         halfA.width(line.width());
         halfB.width(line.width());
-        // copy world x/y from original (z scrolls, synced each frame below)
         halfA.posX(line.posX());
         halfA.posY(line.posY());
         halfB.posX(line.posX());
@@ -127,36 +127,62 @@ public class Lines extends GGen {
         // hide original immediately — the two halves take over visually
         line.visibility(0.);
 
-        while (now - start < fadeDur) {
+        while (now - start < totalDur) {
             GG.nextFrame() => now;
-            (now - start) / fadeDur => float t;
-            1. - t => float alpha;
-            Math.pow(t, 1.5) * 0.5 => float drift; // slow start, fast tear
+            (now - start) / totalDur => float t;
 
-            // half A: right/top side (indices 0 .. cutIdx-1)
-            // drift added ON TOP of the actual curved positions
+            // ---- phase 1: damped-spring snap (0 → snapDur) ----
+            Math.min(1.0, (now - start) / snapDur) => float snapT;
+            1.0 - Math.exp(-12.0 * snapT) => float recoil;
+            Math.exp(-5.0 * snapT) * Math.sin(14.0 * snapT) * 0.18 => float bounce;
+            (recoil + bounce) * 0.6 => float drift;
+
+            // ---- phase 2: slow zero-g float after snap settles ----
+            Math.max(0.0, t - 0.12) * 0.06 +=> drift;
+
+            // ---- phase 3: ease-out dissolve (delayed, stays bright through snap) ----
+            Math.max(0.0, (t - 0.35) / 0.65) => float fadeT;
+            if (fadeT > 1.0)
+                1.0 => fadeT;
+            1.0 - fadeT * fadeT => float alpha;
+
+            // ---- half A: right/top side (indices 0 .. cutIdx-1) ----
             vec3 ptsA[cutIdx];
             for (0 => int i; i < cutIdx; i++) {
+                // distance from anchored end (0) to cut end (1)
+                i $ float / (cutIdx - 1) => float distToCut;
+                distToCut * drift => float mainDrift;
+
+                // curl: perpendicular fray, strongest right at the cut end
+                Math.pow(distToCut, 2.5) * drift * 0.35 => float curl;
+                Math.sin(i * 127.1 + cutIdx * 31.7) => float fray;
+
                 if (direction == 0)
-                    @(basePts[i].x + drift, basePts[i].y, basePts[i].z) => ptsA[i];
+                    @(basePts[i].x + mainDrift, basePts[i].y + curl * fray, basePts[i].z) => ptsA[i];
                 else
-                    @(basePts[i].x, basePts[i].y + drift, basePts[i].z) => ptsA[i];
+                    @(basePts[i].x + curl * fray, basePts[i].y + mainDrift, basePts[i].z) => ptsA[i];
             }
             ptsA => halfA.positions;
 
-            // half B: left/bottom side (indices cutIdx .. N-1)
+            // ---- half B: left/bottom side (indices cutIdx .. N-1) ----
             N - cutIdx => int lenB;
             vec3 ptsB[lenB];
             for (0 => int i; i < lenB; i++) {
+                // distance from cut end (1) to anchored end (0)
+                1.0 - (i $ float / (lenB - 1)) => float distToCut;
+                distToCut * drift => float mainDrift;
+                Math.pow(distToCut, 2.5) * drift * 0.35 => float curl;
+                Math.sin((i + cutIdx) * 127.1 + cutIdx * 31.7) => float fray;
+
                 basePts[i + cutIdx] => vec3 bp;
                 if (direction == 0)
-                    @(bp.x - drift, bp.y, bp.z) => ptsB[i];
+                    @(bp.x - mainDrift, bp.y + curl * fray, bp.z) => ptsB[i];
                 else
-                    @(bp.x, bp.y - drift, bp.z) => ptsB[i];
+                    @(bp.x + curl * fray, bp.y - mainDrift, bp.z) => ptsB[i];
             }
             ptsB => halfB.positions;
 
-            // keep halves at the same scrolled z as the original for depth color
+            // ---- color matches original's z-depth, faded by alpha ----
             line.posZ() => float z;
             halfA.posZ(z);
             halfB.posZ(z);
