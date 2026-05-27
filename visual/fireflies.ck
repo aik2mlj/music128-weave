@@ -1,11 +1,12 @@
 public class Fireflies extends GGen {
     @(255, 230, 109) / 255.0 => vec3 FIREFLY_COLOR;
     // many fireflies out there
-    300 => int FIREFLY_NUM;
-    -10 => float minX => float minY;
-    -50 => float minZ;
-    10 => float maxX => float maxZ;
+    600 => int FIREFLY_NUM;
+    -30 => float minX;
+    -30 => float minZ;
+    30 => float maxX => float maxZ;
     1 => float maxY;
+    -10 => float minY;
 
     SphereGeometry sphere_geo_many(0.02, 32, 16, 0., 2 * Math.pi, 0., Math.pi);
     FlatMaterial mat_many[FIREFLY_NUM];

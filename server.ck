@@ -65,10 +65,13 @@ Lines lines(xmit, bpm) --> GG.scene();
 // add fireflies
 Fireflies fireflies --> GG.scene();
 
-Chords chords;
-GameTrak gt(0);
+// prepopulate
+lines.spawnLines_randomRot(100);
 
 /// ---------- CONTROL ---------- /////
+
+Chords chords;
+GameTrak gt(0);
 
 fun void clientListener() {
     while (true) {

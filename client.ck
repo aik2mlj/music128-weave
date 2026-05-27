@@ -540,15 +540,15 @@ fun void print() {
 // spork ~ print();
 
 
-fun void prePopulate(int numLines) {
-    for (0 => int i; i < numLines; i++) {
-        Math.randomf() * 2 - 1 => gt.axis[1];
-        addThread(0); // direction 0 = horizontal
-    }
-}
-
-// each prepopulates 5 horizontal for now
-prePopulate(5);
+// fun void prePopulate(int numLines) {
+//     for (0 => int i; i < numLines; i++) {
+//         Math.randomf() * 2 - 1 => gt.axis[1];
+//         addThread(0); // direction 0 = horizontal
+//     }
+// }
+//
+// // each prepopulates 5 horizontal for now
+// prePopulate(5);
 
 
 // main loop

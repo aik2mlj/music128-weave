@@ -1,6 +1,13 @@
 @import "../lib/meshlines.ck"
 @import "../sounds/bpm.ck"
 
+class LineStruct {
+    MeshLines line;
+    float vertPositions, horizPositions;
+    vec3 lineCtrl;
+    vec3 color;
+}
+
 public class Lines extends GGen {
     0.01 => static float LINE_WIDTH;
     @(0.2, 0.2, 0.2) => static vec3 LINE_COLOR;
@@ -14,6 +21,9 @@ public class Lines extends GGen {
 
     16 => static int MAX_PLAYER_NUM;
     -10000 => static float DELETE;
+    -8. => static float z0;
+
+    // LineStruct allLines[MAX_PLAYER_NUM][0];
     MeshLines @allLines[MAX_PLAYER_NUM][0];
     float vertPositions[MAX_PLAYER_NUM][0];  // world-space x of for vertical lines
     float horizPositions[MAX_PLAYER_NUM][0]; // for horizontal lines
@@ -32,9 +42,20 @@ public class Lines extends GGen {
     fun float gt2x(float gt) { return Math.map2(gt, 0., 1., MIN_X, MAX_X); }
     fun float gt2y(float gt) { return Math.map2(gt, 0., 1., MIN_Y, MAX_Y); }
 
-    fun addLine(int id, int direction, float pos, vec3 color) {
+    fun void spawnLines_randomRot(int num) {
+        // spawn initially num of lines that are positioned randomly and rotate randomly
+        for (0 => int i; i < num; i++) {
+            Math.random2(0, 1) => int direction;
+            Math.randomf() => float pos;
+            @(Math.randomf(), Math.randomf(), Math.randomf()) => vec3 color;
+            addLine(MAX_PLAYER_NUM - 1, direction, pos, color) @=> GGen @line_tf;
+            line_tf.rotY(Math.random2f(-0.5, 0.5));
+        }
+    }
+
+    fun GGen @addLine(int id, int direction, float pos, vec3 color) {
         <<< "addline" >>>;
-        MeshLines line --> this;
+        MeshLines line --> GGen line_tf --> this;
 
         allLines[id] << line;
 
@@ -66,13 +87,17 @@ public class Lines extends GGen {
         }
         lineCtrl[id] << p0 << p1 << p2 << p3;
 
+        line.posZ(z0);
+
         spork ~ drawLine(direction, line, p0, p1, p2, p3);
         // TODO: currectly animate is going on forever
-        spork ~ animateWidth(line);
-        spork ~ scrollLine(direction, line);
+        spork ~ animateLine(line);
+        // spork ~ scrollLine(direction, line);
+        spork ~ rotateLines();
         spork ~ colorizeLine(line);
 
         updateSegs();
+        return line_tf;
     }
 
     fun void cutLine(int id, int idx, int direction) {
@@ -214,7 +239,7 @@ public class Lines extends GGen {
         }
     }
 
-    fun void animateWidth(MeshLines @line) {
+    fun void animateLine(MeshLines @line) {
         now => time t0;
         // (2 * Math.PI) / (10 * (beatLen / 1::second)) => float speed;
         1 => float speed;
@@ -227,13 +252,15 @@ public class Lines extends GGen {
             // @(LINE_COLOR.x + (inc + Math.randomf()) * dcolor,
             //   LINE_COLOR.y + (inc + Math.randomf()) * dcolor,
             //   LINE_COLOR.z + (inc + Math.randomf()) * dcolor) => line.color;
+            Math.random2(-1, 1) * 0.0005 => float rot;
+            line.rotX(line.rotX() + rot);
+            line.rotY(line.rotY() + rot);
+            line.rotZ(line.rotZ() + rot);
         }
     }
 
     fun void scrollLine(int direction, MeshLines @line) {
         0.5 => float speed;
-        -8. => float z0;
-        line.posZ(z0);
         // scrolling
         now => time start;
         while (true) {
@@ -242,6 +269,13 @@ public class Lines extends GGen {
             // scroll posZ within MIN_Z and MAX_Z, wrap around
             (z0 + speed * t - MIN_Z) % (MAX_Z - MIN_Z) + MIN_Z => float z;
             line.posZ(z);
+        }
+    }
+
+    fun void rotateLines() {
+        while (true) {
+            GG.nextFrame() => now;
+            .001 * GG.dt() => this.rotateY;
         }
     }
 
