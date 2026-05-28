@@ -281,10 +281,11 @@ public class Lines extends GGen {
     fun void animateLine(MeshLines @line) {
         now => time t0;
         1 => float speed;
+        Math.random2f(0, Math.pi) => float phase;
         while (true) {
             GG.nextFrame() => now;
             (now - t0) / 1::second => float t;
-            Math.sin(t * speed) => float inc;
+            Math.sin(t * speed + phase) => float inc;
             LINE_WIDTH + inc * 0.005 => line.width;
             Math.random2(-1, 1) * 0.0005 => float rot;
             line.rotX(line.rotX() + rot);
