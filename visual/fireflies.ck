@@ -26,26 +26,28 @@ public class Fireflies extends GGen {
             Math.random2f(0.1, 0.5) => intensities[i];
         }
         for (auto x : mat_many) {
-            x.color(FIREFLY_COLOR * Math.random2f(0., 0.3));
+            x.color(@(0, 0, 0));
         }
         for (int i; i < FIREFLY_NUM; i++) {
             GMesh sphere(sphere_geo_many, mat_many[i]) @=> fireflies[i];
             fireflies[i] --> this;
             @(Math.random2f(minX, maxX), Math.random2f(minY, maxY), Math.random2f(minZ, maxZ)) => fireflies[i].translate;
         }
-        spork ~ fade_in_out();
+        spork ~ shine();
         spork ~ drifting();
     }
 
-    fun void fade_in_out() {
+    fun void shine() {
         // fireflies: fade in/out randomly
         now => time init_t;
+        2 => float fadeInTime;
         while (true) {
             GG.nextFrame() => now;
             (now - init_t) / 1::second => float t;
             for (int i; i < FIREFLY_NUM; i++) {
                 FIREFLY_COLOR * intensities[i] *
-                    Math.fabs(Math.sin(fade_freq[i] * t + init_time[i])) => mat_many[i].color;
+                    Math.fabs(Math.sin(fade_freq[i] * t + init_time[i])) *
+                    Math.map2(t, 0, fadeInTime, 0, 1) => mat_many[i].color;
             }
         }
     }
@@ -59,17 +61,17 @@ public class Fireflies extends GGen {
         while (true) {
             GG.nextFrame() => now;
 
-            if (UI.isKeyPressed(UI_Key.W)) {
-                0.1 +=> vz_mag;
-            } else if (UI.isKeyPressed(UI_Key.S)) {
-                0.1 -=> vz_mag;
-            }
-
-            if (UI.isKeyPressed(UI_Key.A)) {
-                0.01 +=> vx_mag;
-            } else if (UI.isKeyPressed(UI_Key.D)) {
-                0.01 -=> vx_mag;
-            }
+            // if (UI.isKeyPressed(UI_Key.W)) {
+            //     0.1 +=> vz_mag;
+            // } else if (UI.isKeyPressed(UI_Key.S)) {
+            //     0.1 -=> vz_mag;
+            // }
+            //
+            // if (UI.isKeyPressed(UI_Key.A)) {
+            //     0.01 +=> vx_mag;
+            // } else if (UI.isKeyPressed(UI_Key.D)) {
+            //     0.01 -=> vx_mag;
+            // }
 
             for (int i; i < FIREFLY_NUM; i++) {
                 Math.random2f(-acc_range, acc_range) +=> vx[i];

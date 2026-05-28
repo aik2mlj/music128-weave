@@ -66,9 +66,6 @@ xmit.dest(hostname, port);
 
 Lines lines(xmit, bpm) --> GG.scene();
 
-// add fireflies
-Fireflies fireflies --> GG.scene();
-
 // prepopulate
 // lines.spawnLines_randomRot(100);
 
@@ -134,6 +131,8 @@ fun void keyboardHandler() {
                 1 => scroll;
                 0 => randomRot;
                 lines.scrollingTheme();
+                // add fireflies
+                Fireflies fireflies --> GG.scene();
             } else if (THEME == 2) {
                 // rotating
                 1 => randomRot;
