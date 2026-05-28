@@ -140,6 +140,8 @@ fun void keyboardHandler() {
                 0 => scroll;
                 // change chord with huge pitch bend
                 (step + 1) % 7 => step;
+                // temporarily remove all the segments
+                // lines.clearSegs();
                 lines.rotatingTheme();
             }
         }

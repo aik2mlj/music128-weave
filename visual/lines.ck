@@ -335,6 +335,9 @@ public class Lines extends GGen {
                 allLines[id][i].line.posX(gt2x(pos[i]));
         }
     }
+
+    fun void clearSegs() { sendRhythmSegs([0::samp], [0::samp]); }
+
     fun dur[] computeSegments(int axis) {
         // axis 0 = vert (x for vertical lines), axis 1 = horiz (y for horizontal)
         float bounds[0];
