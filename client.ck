@@ -82,6 +82,8 @@ OscOut xmit;
 // aim the transmitter at destination
 xmit.dest(hostname, port);
 
+0 => int STEP;
+
 fun void serverListener() {
     while (true) {
         oin => now;
@@ -98,20 +100,25 @@ fun void serverListener() {
                 }
             } else if (msg.address == "/server/chord") {
                 msg.getInt(0) => int step;
-                if (step == 0)
-                    chordChanger(chords.b_maj9);
-                else if (step == 1)
-                    chordChanger(chords.fsharp_maj9);
-                else if (step == 2)
-                    chordChanger(chords.csharp_maj7);
-                else if (step == 3)
-                    chordChanger(chords.aflat_sus2);
-                else if (step == 4)
-                    chordChanger(chords.bflat_9sus4);
-                else if (step == 5)
-                    chordChanger(chords.chordInverter(chords.bflat_9sus4, 2, 0));
-                else if (step == 6)
-                    chordChanger(chords.chordInverter(chords.bflat_9sus4, 1, 0));
+                if (step != STEP) {
+                    msg.getInt(1) => int randomRot;
+                    // randomRot == pitchBend
+                    if (step == 0)
+                        chordChanger(chords.b_maj9, randomRot);
+                    else if (step == 1)
+                        chordChanger(chords.fsharp_maj9, randomRot);
+                    else if (step == 2)
+                        chordChanger(chords.csharp_maj7, randomRot);
+                    else if (step == 3)
+                        chordChanger(chords.aflat_sus2, randomRot);
+                    else if (step == 4)
+                        chordChanger(chords.bflat_9sus4, randomRot);
+                    else if (step == 5)
+                        chordChanger(chords.chordInverter(chords.bflat_9sus4, 2, 0), randomRot);
+                    else if (step == 6)
+                        chordChanger(chords.chordInverter(chords.bflat_9sus4, 1, 0), randomRot);
+                    step => STEP;
+                }
             } else if (msg.address == "/server/segs") {
                 // reconstruct the array from however many args came in
                 msg.getInt(0) => int numX;
@@ -298,7 +305,7 @@ fun void sendAddLine(Thread @thread) {
 /// ---------- CHORD ---------- /////
 // for changing the entire chord/ scale scope
 
-fun void chordChanger(int input[]) {
+fun void chordChanger(int input[], int pitchBend) {
     provider.notes @=> int oldNotes[]; // save it！
     input @=> provider.notes;
 
@@ -309,7 +316,11 @@ fun void chordChanger(int input[]) {
             provider.getNote(threads[i].pos) => int note;
             // threads[i].freq(Std.mtof(48 + note));
 
-            threads[i].set_target_pitch(0.5, note);
+            if (pitchBend) {
+                threads[i].set_target_pitch(note);
+            } else {
+                threads[i].set_target_pitch(0.5, note);
+            }
         }
     }
 
@@ -356,34 +367,33 @@ fun void sendLinePos(int allLineDir[], float allLinePos[]) {
 fun void chordAdder(int input[]) { input @=> provider.notes; }
 
 
-fun void chordSequencer() {
-    0 => int step;
-    while (true) {
-        if (gt.buttonPressed) {
-            if (step == 0)
-                chordChanger(chords.b_maj9);
-            else if (step == 1)
-                chordChanger(chords.fsharp_maj9);
-            else if (step == 2)
-                chordChanger(chords.csharp_maj7);
-            else if (step == 3)
-                chordChanger(chords.aflat_sus2);
-            else if (step == 4)
-                chordChanger(chords.bflat_9sus4);
-            else if (step == 5)
-                chordChanger(chords.chordInverter(chords.bflat_9sus4, 2, 0));
-            else if (step == 6)
-                chordChanger(chords.chordInverter(chords.bflat_9sus4, 1, 0));
-
-            // loop for now
-            (step + 1) % 7 => step;
-
-            <<< "chord changed: ", step >>>;
-        }
-        10::ms => now;
-    }
-}
-
+// fun void chordSequencer() {
+//     0 => int step;
+//     while (true) {
+//         if (gt.buttonPressed) {
+//             if (step == 0)
+//                 chordChanger(chords.b_maj9);
+//             else if (step == 1)
+//                 chordChanger(chords.fsharp_maj9);
+//             else if (step == 2)
+//                 chordChanger(chords.csharp_maj7);
+//             else if (step == 3)
+//                 chordChanger(chords.aflat_sus2);
+//             else if (step == 4)
+//                 chordChanger(chords.bflat_9sus4);
+//             else if (step == 5)
+//                 chordChanger(chords.chordInverter(chords.bflat_9sus4, 2, 0));
+//             else if (step == 6)
+//                 chordChanger(chords.chordInverter(chords.bflat_9sus4, 1, 0));
+//
+//             // loop for now
+//             (step + 1) % 7 => step;
+//
+//             <<< "chord changed: ", step >>>;
+//         }
+//         10::ms => now;
+//     }
+// }
 // spork ~ chordSequencer();
 
 

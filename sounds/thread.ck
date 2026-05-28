@@ -36,7 +36,6 @@ public class Thread {
 
     // using this to help with pitch bend
     Envelope pitch => blackhole;
-    1::second => pitch.duration;
     0 => pitch.value;
 
 
@@ -44,10 +43,28 @@ public class Thread {
 
     float targetPitch;
 
+    // this is the slight pitchBend with a bit detune
     fun void set_target_pitch(float bendSemitone, int inputNote) {
         inputNote $ float => pitch.target => targetPitch;
         // current, from below
         (inputNote - bendSemitone) $ float => pitch.value;
+        1::second => pitch.duration;
+
+        pitch.keyOn();
+
+        if (pitchShred != null)
+            pitchShred.exit();
+
+        spork ~ pitchBend() @=> pitchShred;
+    }
+
+    // this is the huge pitchBend from the last pitch
+    fun void set_target_pitch(int inputNote) {
+        pitch.target() => float initPitch;
+        inputNote $ float => pitch.target => targetPitch;
+        // current, from below
+        initPitch $ float => pitch.value;
+        2::second => pitch.duration;
 
         pitch.keyOn();
 
@@ -60,7 +77,7 @@ public class Thread {
 
     fun void pitchBend() {
         now => time start;
-        while (now - start < 1.2::second) {
+        while (now - start < pitch.duration()) {
             osc.freq(Std.mtof(48 + pitch.value()));
             5::ms => now;
         }

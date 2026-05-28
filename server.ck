@@ -73,6 +73,7 @@ Lines lines(xmit, bpm) --> GG.scene();
 
 Chords chords;
 GameTrak gt(0);
+0 => int step;
 
 fun void clientListener() {
     while (true) {
@@ -137,6 +138,8 @@ fun void keyboardHandler() {
                 // rotating
                 1 => randomRot;
                 0 => scroll;
+                // change chord with huge pitch bend
+                (step + 1) % 7 => step;
                 lines.rotatingTheme();
             }
         }
@@ -152,9 +155,7 @@ fun void sendCycle() {
 }
 
 
-0 => int step;
 fun void chordSequencer() {
-
     while (true) {
         gt.buttonPress => now;
         (step + 1) % 7 => step;
@@ -169,5 +170,6 @@ while (true) {
     // continuous send
     xmit.start("/server/chord");
     step => xmit.add;
+    randomRot => xmit.add;
     xmit.send();
 }
