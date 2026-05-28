@@ -59,7 +59,10 @@ xmit.dest(hostname, port);
 // address that will send: /server/cycle, /server/segs
 
 /// ---------- VISUAL ---------- /////
-1 => int randomRot;
+
+0 => int THEME;
+0 => int randomRot;
+0 => int scroll;
 
 Lines lines(xmit, bpm) --> GG.scene();
 
@@ -88,7 +91,7 @@ fun void clientListener() {
                 msg.getFloat(4) => float cy;
                 msg.getFloat(5) => float cz;
                 @(cx, cy, cz) => vec3 color;
-                lines.addLine(id, direction, pos, color, randomRot);
+                lines.addLine(id, direction, pos, color, scroll);
             } else if (msg.address == "/client/linepos") {
                 msg.getInt(0) => int id;
                 msg.getInt(1) => int size;
@@ -122,6 +125,21 @@ fun void keyboardHandler() {
             // TODO: optimize
             sendCycle();
             lines.updateSegs();
+        } else if (UI.isKeyPressed(UI_Key.Enter, false)) {
+            // switch to the second theme
+            <<< "theme changed" >>>;
+            ++THEME;
+            if (THEME == 1) {
+                // scrolling
+                1 => scroll;
+                0 => randomRot;
+                lines.scrollingTheme();
+            } else if (THEME == 2) {
+                // rotating
+                1 => randomRot;
+                0 => scroll;
+                lines.rotatingTheme();
+            }
         }
     }
 }

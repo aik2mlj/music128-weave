@@ -7,6 +7,10 @@ class LineStruct {
     float vertPos, horizPos; // one is the line's world coord, the other is DELETE-1
     vec3 ctrl[0];            // 4 bezier control points
     vec3 color;              // per-line color
+    int direction;
+
+    Shred @scrollShred;
+    Shred @animateShred;
 }
 
 public class Lines extends GGen {
@@ -29,9 +33,12 @@ public class Lines extends GGen {
     OscOut @xmit;
     BPM bpm;
 
+    Shred @rotateShred;
+
     fun @construct(OscOut @x, BPM @b) {
         x @=> xmit;
         b @=> bpm;
+        // spork ~ rotateLines() @=> rotateShred;
     }
 
     fun float gt2x(float gt) { return Math.map2(gt, 0., 1., MIN_X, MAX_X); }
@@ -47,7 +54,7 @@ public class Lines extends GGen {
     //     }
     // }
 
-    fun GGen @addLine(int id, int direction, float pos, vec3 color, int randomRot) {
+    fun void addLine(int id, int direction, float pos, vec3 color, int scroll) {
         <<< "addline" >>>;
         MeshLines line --> GGen line_tf --> this;
 
@@ -55,6 +62,7 @@ public class Lines extends GGen {
         line @=> ls.line;
         line_tf @=> ls.tf;
         color => ls.color;
+        direction => ls.direction;
         line.width(LINE_WIDTH);
         line.posZ(z0);
 
@@ -83,21 +91,60 @@ public class Lines extends GGen {
         }
         ls.ctrl << p0 << p1 << p2 << p3;
 
-        if (randomRot) {
-            Math.random2f(0, 2 * Math.pi) => line_tf.rotateY;
+        // if (randomRot) {
+        //     Math.random2f(0, 2 * Math.pi) => line_tf.rotateY;
+        if (scroll) {
+            spork ~ scrollLine(direction, line) @=> ls.scrollShred;
+            spork ~ animateLine(line) @=> ls.animateShred;
         }
 
         allLines[id] << ls;
 
         spork ~ drawLine(direction, line, ls.ctrl);
         // TODO: currectly animate is going on forever
-        spork ~ animateLine(line);
-        // spork ~ scrollLine(direction, line);
-        spork ~ rotateLines();
+
+        // spork ~ animateLine(line);
         spork ~ colorizeLine(line, color);
 
         updateSegs();
-        return line_tf;
+    }
+
+    fun void scrollingTheme() {
+        for (0 => int id; id < MAX_PLAYER_NUM; id++) {
+            for (0 => int i; i < allLines[id].size(); i++) {
+                allLines[id][i] @=> LineStruct @ls;
+                ls.tf.rotY(0);
+                if (ls.scrollShred != null)
+                    ls.scrollShred.exit();
+                spork ~ scrollLine(ls.direction, ls.line) @=> ls.scrollShred;
+            }
+        }
+    }
+
+    fun void rotatingTheme() {
+        if (rotateShred != null)
+            rotateShred.exit();
+        spork ~ rotateLines() @=> rotateShred;
+        for (0 => int id; id < MAX_PLAYER_NUM; id++) {
+            for (0 => int i; i < allLines[id].size(); i++) {
+                allLines[id][i] @=> LineStruct @ls;
+                // distribute the rotY in a circle
+                Math.random2f(0, 2 * Math.pi) => float rad;
+                spork ~ transit2Rotate(ls.line, ls.tf, rad, 3);
+                if (ls.scrollShred != null)
+                    ls.scrollShred.exit();
+            }
+        }
+    }
+
+    fun void transit2Rotate(MeshLines @line, GGen @tf, float target, float duration) {
+        now => time start;
+        while (now - start < duration::second) {
+            GG.nextFrame() => now;
+            (now - start) / (duration::second) => float t;
+            // smoothstep derivative: parabola peaks at t=0.5, zero at ends
+            t * (1.0 - t) * 6.0 * target / duration * GG.dt() => tf.rotateY;
+        }
     }
 
     fun void cutLine(int id, int idx, int direction) {
@@ -262,7 +309,7 @@ public class Lines extends GGen {
     fun void rotateLines() {
         while (true) {
             GG.nextFrame() => now;
-            .001 * GG.dt() => this.rotateY;
+            .1 * GG.dt() => this.rotateY;
         }
     }
 

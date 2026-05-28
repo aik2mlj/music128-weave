@@ -17,12 +17,12 @@ Scales scales;
 Global.gt @=> GameTrak @gt;
 
 // one person can weave up to six threads (one hemi)
-6 => int CHANNELS;
+12 => int CHANNELS;
 0 => int CHAN_OFFSET;
 
 0.01 => float LINE_WIDTH;
 // random color for each client
-@(Math.random2f(0.1, 0.9), Math.random2f(0.1, 0.9), Math.random2f(0.1, 0.9)) => vec3 color;
+@(Math.random2f(0.2, 0.9), Math.random2f(0.2, 0.9), Math.random2f(0.2, 0.9)) => vec3 color;
 
 -2 * 16 / 9 => float MIN_X;
 2 * 16 / 9 => float MAX_X;
@@ -229,7 +229,9 @@ fun void sendCutLine(int idx, int direction) {
     xmit.send();
 }
 
-fun void addThread(int direction) {
+fun void addThread(int direction) { addThread(direction, 0); }
+
+fun void addThread(int direction, int prepopulate) {
     <<< "addthread" >>>;
     threads[threadNum++ % CHANNELS] @=> Thread thread;
 
@@ -252,7 +254,12 @@ fun void addThread(int direction) {
 
     pos => thread.pos;
     direction => thread.direction;
-    color => thread.color;
+    if (prepopulate) {
+        // grey color
+        Math.random2f(0.3, 2) * @(0.1, 0.1, 0.1) => thread.color;
+    } else {
+        color => thread.color;
+    }
     threadNum - 1 => thread.idx;
 
     allLinePos << pos;
@@ -543,7 +550,9 @@ fun void print() {
 fun void prePopulate(int numLines) {
     for (0 => int i; i < numLines; i++) {
         Math.randomf() * 2 - 1 => gt.axis[1];
-        addThread(Math.random2(0, 1));
+        Math.randomf() * 2 - 1 => gt.axis[4];
+        addThread(Math.random2(0, 1), 1);
+        10::ms => now;
     }
 }
 
