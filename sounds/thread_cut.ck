@@ -8,9 +8,9 @@ public class ThreadCut {
         Math.random2f(0, 0.5) => karp.sustain;
         Math.random2f(0, 1) => karp.stretch;
         karpEnv.keyOn();
-        karpEnv.gain(0.5);
+        karpEnv.gain(1.0);
 
         Std.mtof(inputNote) => karp.freq;
-        0.5 => karp.pluck;
+        Math.random2f(0.8, 1.0) => karp.pluck;
     }
 }
