@@ -88,7 +88,7 @@ fun void clientListener() {
                 msg.getFloat(4) => float cy;
                 msg.getFloat(5) => float cz;
                 @(cx, cy, cz) => vec3 color;
-                lines.addLine(id, direction, pos, color, scroll);
+                lines.addLine(id, direction, pos, color, scroll, randomRot);
             } else if (msg.address == "/client/linepos") {
                 msg.getInt(0) => int id;
                 msg.getInt(1) => int size;

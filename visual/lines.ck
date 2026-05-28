@@ -26,7 +26,7 @@ public class Lines extends GGen {
 
     16 => static int MAX_PLAYER_NUM;
     -10000 => static float DELETE;
-    -8. => static float z0;
+    -6.5 => static float z0;
 
     LineStruct allLines[MAX_PLAYER_NUM][0];
 
@@ -54,7 +54,7 @@ public class Lines extends GGen {
     //     }
     // }
 
-    fun void addLine(int id, int direction, float pos, vec3 color, int scroll) {
+    fun void addLine(int id, int direction, float pos, vec3 color, int scroll, int randomRot) {
         <<< "addline" >>>;
         MeshLines line --> GGen line_tf --> this;
 
@@ -91,12 +91,14 @@ public class Lines extends GGen {
         }
         ls.ctrl << p0 << p1 << p2 << p3;
 
-        // if (randomRot) {
-        //     Math.random2f(0, 2 * Math.pi) => line_tf.rotateY;
+        if (randomRot) {
+            Math.random2f(0, 2 * Math.pi) => line_tf.rotateY;
+        }
         if (scroll) {
             spork ~ scrollLine(direction, line) @=> ls.scrollShred;
-            spork ~ animateLine(line) @=> ls.animateShred;
         }
+        if (randomRot || scroll)
+            spork ~ animateLine(line) @=> ls.animateShred;
 
         allLines[id] << ls;
 
@@ -117,6 +119,8 @@ public class Lines extends GGen {
                 if (ls.scrollShred != null)
                     ls.scrollShred.exit();
                 spork ~ scrollLine(ls.direction, ls.line) @=> ls.scrollShred;
+                if (ls.animateShred == null)
+                    spork ~ animateLine(ls.line) @=> ls.animateShred;
             }
         }
     }
