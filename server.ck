@@ -156,6 +156,7 @@ fun void sendStage() {
     xmit.start("/server/stage");
     xmit.add(STAGE);
     while (true) {
+        10::ms => now;
         xmit.send();
     }
 }
