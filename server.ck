@@ -147,7 +147,7 @@ fun void keyboardHandler() {
             }
         } else if (UI.isKeyPressed(UI_Key.Space, false)) {
             ++STAGE;
-            sendStage();
+            spork ~ sendStage();
         }
     }
 }
@@ -157,7 +157,9 @@ spork ~ keyboardHandler();
 fun void sendStage() {
     xmit.start("/server/stage");
     xmit.add(STAGE);
-    xmit.send();
+    while (true) {
+        xmit.send();
+    }
 }
 
 

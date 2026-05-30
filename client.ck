@@ -82,10 +82,16 @@ xmit.dest(hostname, port);
 @(0.820, 0.937, 0.980, 1) => vec4 textColor;
 GText @currentInstruction;
 null @=> currentInstruction;
+GText @currentInstruction2;
+null @=> currentInstruction2;
 
 fun void addInstruction(string instruction) {
     if (currentInstruction != null)
         currentInstruction --< GG.scene();
+    if (currentInstruction2 != null) {
+        currentInstruction2 --< GG.scene();
+        null @=> currentInstruction2;
+    }
     GText text;
     text.size(0.2);
     text.text(instruction);
@@ -95,11 +101,32 @@ fun void addInstruction(string instruction) {
     text @=> currentInstruction;
 }
 
+// multiple line version
+fun void addInstruction(string line1, string line2) {
+    if (currentInstruction != null)
+        currentInstruction --< GG.scene();
+    if (currentInstruction2 != null)
+        currentInstruction2 --< GG.scene();
+    GText text1;
+    text1.size(0.2);
+    text1.text(line1);
+    text1.color(textColor);
+    text1.pos(@(0, 0.15, 0));
+    text1 --> GG.scene();
+    text1 @=> currentInstruction;
 
+    GText text2;
+    text2.size(0.2);
+    text2.text(line2);
+    text2.color(textColor);
+    text2.pos(@(0, -0.15, 0));
+    text2 --> GG.scene();
+    text2 @=> currentInstruction2;
+}
+
+// initiate
 if (ID == 0) {
-    addInstruction(
-    "Slowly, intentionally
-    Draw 5 horizontal at different pitches");
+    addInstruction("Slowly, intentionally", "Draw 5 horizontal threads");
 } else if (ID >= 1 && ID <= 4) {
     addInstruction("Wait");
 }
@@ -128,24 +155,22 @@ fun void serverListener() {
                 if (stage != STAGE) {
                     if (stage == 1) {
                         if (ID == 0) {
-                            addInstruction(
-                            "Again, slowly, intentionally
-                            Draw 5 horizontal at different pitches");
+                            addInstruction("Again Slowly, intentionally",
+                                           "Draw 5 horizontal threads");
                         } else if (ID == 1) {
-                            addInstruction(
-                            "
-                            Wait til player 0 is done
-                            Then Slowly, intentionally
-                            Draw 5 vertical at different pitches");
+                            addInstruction("Wait til player 0 is done",
+                                           "Then slowly, intentionally draw 5 vertical threads");
                         } else {
                             addInstruction("Wait");
                         }
                     }
 
                     else if (stage == 2) {
-                            addInstruction("
-                            At a moderate speed,
-                            Draw lines");
+                        if (ID == 0 || ID == 2 || ID == 4) {
+                            addInstruction("At a moderate speed", "Draw horizontal threads");
+                        } else {
+                            addInstruction("At a moderate speed", "Draw vertical threads");
+                        }
                     }
                     stage => STAGE;
                 }
