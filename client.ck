@@ -28,16 +28,14 @@ Global.gt @=> GameTrak @gt;
 2 * 16 / 9 => float MAX_X;
 -2 => float MIN_Y;
 2 => float MAX_Y;
-fun float gt2x(float gt) { return Math.map2(gt, 0., 1., MIN_X, MAX_X); }
-fun float gt2y(float gt) { return Math.map2(gt, 0., 1., MIN_Y, MAX_Y); }
 
 // instantiate sound threads
 Thread threads[CHANNELS];
 ThreadCut threadCut;
 float allLinePos[0];
 int allLineDir[0];
-int allCuts[0];
 
+0 => int threadNum;
 
 for (0 => int i; i < CHANNELS; ++i) {
     threads[i].connect2dac(i);
@@ -61,8 +59,7 @@ oin.addAddress("/server/cycle");
 oin.addAddress("/server/segs");
 oin.addAddress("/server/chord");
 oin.addAddress("/server/stage");
-
-/// ---------- ID ---------- /////
+oin.addAddress("/server/cutlines");
 
 "localhost" => string hostname;
 0 => int ID;
@@ -215,11 +212,23 @@ fun void serverListener() {
                 // for (int n; n < numY; ++n)
                 //     <<< "\t", segYs[n] / 1::samp >>>;
                 updateExistingRhythms(segXs, segYs);
+            } else if (msg.address == "/server/cutlines") {
+                msg.getInt(0) => int size;
+                int ids[size], idxs[size];
+                for (int i; i < size; ++i) {
+                    msg.getInt(1 + i * 2) => ids[i];
+                    msg.getInt(1 + i * 2 + 1) => idxs[i];
+                    // cut Thread sound here if id matches this client
+                    if (ids[i] == ID) {
+                        cutThread(idxs[i]);
+                    }
+                }
             }
         }
     }
 }
 spork ~ serverListener();
+
 /// ---------- RHYTHM ---------- /////
 
 fun void updateExistingRhythms(dur segXs[], dur segYs[]) {
@@ -238,81 +247,65 @@ fun void updateExistingRhythms(dur segXs[], dur segYs[]) {
     }
 }
 
+fun void cutThread(int idx) {
+    // this idx is the index in allLinePos etc.
+    // so need to iterate threads to see if if any of them have this idx
+    for (0 => int i; i < CHANNELS; i++) {
+        if (threads[i].idx == idx && threads[i].isOn()) {
+            threads[i].off();
+            provider.getNote(threads[i].pos) => int targetNote;
+            threadCut.cut(targetNote);
+            <<< "cut thread", idx >>>;
+        }
+    }
+}
 
 // fun void cutThread(int direction) {
-//     if (direction == 0) {
-//         for (0 => int i; i < CHANNELS; i++) {
-//             if (threads[i].isOn() && threads[i].direction == 0) {
-//                 threads[i].off();
+//     int targetNote;
+//     if (direction == 0)
+//         provider.getNote(gt.axis[5]) => targetNote;
+//     else if (direction == 1)
+//         provider.getNote(gt.axis[2]) => targetNote;
+//
+//     1000 => int minDiff;
+//     -1 => int minN;
+//     // get the thread that is closest to the target note
+//     for (0 => int i; i < CHANNELS; i++) {
+//         if (threads[i].isOn() && threads[i].direction == direction) {
+//             if (Math.abs(provider.getNote(threads[i].pos) - targetNote) < minDiff) {
+//                 Math.abs(provider.getNote(threads[i].pos) - targetNote) => minDiff;
+//                 i => minN;
 //             }
 //         }
-//     } else if (direction == 1) {
-//         for (0 => int i; i < CHANNELS; i++) {
-//             if (threads[i].isOn() && threads[i].direction == 1) {
-//                 threads[i].off();
+//     }
+//     if (minN >= 0) {
+//         threads[minN].off();
+//         threadCut.cut(targetNote);
+//         1 => allCuts[threads[minN].idx];
+//         // send to server which line to cut
+//         sendCutLine(threads[minN].idx, direction);
+//     } else {
+//         1000 => minDiff;
+//         -1 => minN;
+//         // then find the closest line from allLinePos
+//         for (0 => int i; i < allLinePos.size(); ++i) {
+//             if (allCuts[i] == 0 && allLineDir[i] == direction) {
+//                 allLinePos[i] => float pos;
+//                 if (Math.abs(provider.getNote(pos) - targetNote) < minDiff) {
+//                     Math.abs(provider.getNote(pos) - targetNote) => minDiff;
+//                     i => minN;
+//                 }
 //             }
+//         }
+//         if (minN >= 0) {
+//             1 => allCuts[minN];
+//             threadCut.cut(targetNote);
+//             // send to server which line to cut
+//             sendCutLine(minN, direction);
 //         }
 //     }
 // }
 
-
-// in client.ck, after the 1::second => now; line
-
-
-fun void cutThread(int direction) {
-
-    int targetNote;
-    if (direction == 0)
-        provider.getNote(gt.axis[5]) => targetNote;
-    else if (direction == 1)
-        provider.getNote(gt.axis[2]) => targetNote;
-
-    1000 => int minDiff;
-    -1 => int minN;
-    // get the thread that is closest to the target note
-    for (0 => int i; i < CHANNELS; i++) {
-        if (threads[i].isOn() && threads[i].direction == direction) {
-            if (Math.abs(provider.getNote(threads[i].pos) - targetNote) < minDiff) {
-                Math.abs(provider.getNote(threads[i].pos) - targetNote) => minDiff;
-                i => minN;
-            }
-        }
-    }
-    if (minN >= 0) { // if found
-        threads[minN].off();
-        threadCut.cut(targetNote);
-        1 => allCuts[threads[minN].idx];
-        // send to server which line to cut
-        sendCutLine(threads[minN].idx, direction);
-    } else { // if did not find
-        1000 => minDiff;
-        -1 => minN;
-        // then find the closest line from allLinePos
-        for (0 => int i; i < allLinePos.size(); ++i) {
-            if (allCuts[i] == 0 && allLineDir[i] == direction) {
-                allLinePos[i] => float pos;
-                if (Math.abs(provider.getNote(pos) - targetNote) < minDiff) {
-                    Math.abs(provider.getNote(pos) - targetNote) => minDiff;
-                    i => minN;
-                }
-            }
-        }
-        if (minN >= 0) {
-            1 => allCuts[minN];
-            threadCut.cut(targetNote);
-            // send to server which line to cut
-            sendCutLine(minN, direction);
-        }
-    }
-}
-
-fun void sendCutLine(int idx, int direction) {
-    xmit.start("/client/cutline");
-    ID => xmit.add;
-    idx => xmit.add;
-    direction => xmit.add;
-    xmit.send();
-}
 
 fun void addThread(int direction) { addThread(direction, 0); }
 
@@ -349,7 +342,6 @@ fun void addThread(int direction, int prepopulate) {
 
     allLinePos << pos;
     allLineDir << direction;
-    allCuts << 0;
 
     provider.getNote(pos) => note;
 
@@ -444,62 +436,6 @@ fun void sendLinePos(int allLineDir[], float allLinePos[]) {
 // for adding new chord on the context of existing chord(s)
 fun void chordAdder(int input[]) { input @=> provider.notes; }
 
-
-// fun void chordSequencer() {
-//     0 => int step;
-//     while (true) {
-//         if (gt.buttonPressed) {
-//             if (step == 0)
-//                 chordChanger(chords.b_maj9);
-//             else if (step == 1)
-//                 chordChanger(chords.fsharp_maj9);
-//             else if (step == 2)
-//                 chordChanger(chords.csharp_maj7);
-//             else if (step == 3)
-//                 chordChanger(chords.aflat_sus2);
-//             else if (step == 4)
-//                 chordChanger(chords.bflat_9sus4);
-//             else if (step == 5)
-//                 chordChanger(chords.chordInverter(chords.bflat_9sus4, 2, 0));
-//             else if (step == 6)
-//                 chordChanger(chords.chordInverter(chords.bflat_9sus4, 1, 0));
-//
-//             // loop for now
-//             (step + 1) % 7 => step;
-//
-//             <<< "chord changed: ", step >>>;
-//         }
-//         10::ms => now;
-//     }
-// }
-// spork ~ chordSequencer();
-
-
-// 0: left handle's x
-// 1: left handle's y
-// 2: left handle's z
-// 3: right handle's x
-// 4: right handle's y
-// 5: right handle's z
-
-
-/// ---------- STATE ---------- /////
-public class State {
-    0 => static int NONE;
-    1 => static int LEFT;
-    2 => static int RIGHT;
-    3 => static int CENTER;
-}
-
-State.NONE => int stateX;
-State.NONE => int stateY;
-
-// the state within this round of weaving.
-// 0 = none, 1 = left seen, 2 = center seen, 3 = right seen
-0 => int roundStage;
-0 => int threadNum;
-
-
 // need to sendAddLine
 fun void drawHandler() {
 
@@ -538,72 +474,6 @@ fun void drawHandler() {
 
 spork ~ drawHandler();
 
-// for tracking the motion
-fun void stateHandler() {
-    while (true) {
-        // X, left tether
-        State.NONE => int newState;
-        if (gt.axis[0] < -0.05)
-            State.LEFT => newState;
-        else if (gt.axis[0] > 0.05)
-            State.RIGHT => newState;
-        else
-            State.CENTER => newState;
-
-
-        // gt.axis[2]
-
-        // only act on state transitions
-        if (newState != stateX) {
-            newState => stateX;
-
-            if (stateX == State.LEFT && roundStage == 0)
-                1 => roundStage;
-            else if (stateX == State.CENTER && roundStage == 1)
-                2 => roundStage;
-            else if (stateX == State.RIGHT && roundStage == 2)
-                3 => roundStage;
-            else if (stateX == State.CENTER && roundStage == 3) {
-                if (gt.buttonHeldDown)
-                    cutThread(1);
-                0 => roundStage;
-            }
-        }
-
-
-        // Y, right tether
-        State.NONE => newState;
-        if (gt.axis[4] < -0.05)
-            State.LEFT => newState;
-        else if (gt.axis[4] > 0.05)
-            State.RIGHT => newState;
-        else
-            State.CENTER => newState;
-
-
-        // gt.axis[5]
-
-        // only act on state transitions
-        if (newState != stateY) {
-            newState => stateY;
-
-            if (stateY == State.LEFT && roundStage == 0)
-                1 => roundStage;
-            else if (stateY == State.CENTER && roundStage == 1)
-                2 => roundStage;
-            else if (stateY == State.RIGHT && roundStage == 2)
-                3 => roundStage;
-            else if (stateY == State.CENTER && roundStage == 3) {
-                if (gt.buttonHeldDown)
-                    cutThread(0);
-                0 => roundStage;
-            }
-        }
-
-        10::ms => now;
-    }
-}
-spork ~ stateHandler();
 
 fun void keyboardHandler() {
     while (true) {

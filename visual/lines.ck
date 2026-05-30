@@ -8,6 +8,7 @@ class LineStruct {
     vec3 ctrl[0];            // 4 bezier control points
     vec3 color;              // per-line color
     int direction;
+    int cut;
 
     Shred @scrollShred;
     Shred @animateShred;
@@ -61,6 +62,7 @@ public class Lines extends GGen {
         LineStruct ls;
         line @=> ls.line;
         line_tf @=> ls.tf;
+        0 => ls.cut; // not cut yet
         color => ls.color;
         direction => ls.direction;
         line.width(LINE_WIDTH);
@@ -151,14 +153,52 @@ public class Lines extends GGen {
         }
     }
 
-    fun void cutLine(int id, int idx, int direction) {
+    fun void cutRandomLines(int num, int direction) {
+        // cut num random line from any player
+        0 => int cutNum;
+        0 => int attemptNum;
+        int ids[0], idxs[0];
+        while (cutNum < num && attemptNum < 100) {
+            Math.random2(0, MAX_PLAYER_NUM - 1) => int id;
+            if (allLines[id].size() > 0) {
+                Math.random2(0, allLines[id].size() - 1) => int idx;
+                ++attemptNum;
+                if (!allLines[id][idx].cut && allLines[id][idx].direction == direction) {
+                    if (cutLine(id, idx, direction)) {
+                        ids << id;
+                        idxs << idx;
+                        cutNum++;
+                    } else
+                        break;
+                }
+            }
+        }
+
+        if (cutNum > 0) {
+            // now send ids and idxs
+            sendCutLines(ids, idxs);
+        }
+    }
+
+    fun void sendCutLines(int ids[], int idxs[]) {
+        xmit.start("/server/cutlines");
+        xmit.add(ids.size());
+        for (0 => int i; i < ids.size(); i++) {
+            xmit.add(ids[i]);
+            xmit.add(idxs[i]);
+        }
+        xmit.send();
+    }
+
+    fun int cutLine(int id, int idx, int direction) {
         <<< "cutline" >>>;
         if (idx < 0 || idx >= allLines[id].size()) {
             <<< "\twarning: invalid idx", idx >>>;
-            return;
+            return 0; // failed
         }
 
         allLines[id][idx] @=> LineStruct @ls;
+        1 => ls.cut;
 
         spork ~ cutAnimation(ls.line, ls.tf, ls.ctrl, ls.color, direction);
 
@@ -169,6 +209,7 @@ public class Lines extends GGen {
             DELETE - 1 => ls.vertPos;
 
         updateSegs();
+        return 1; // success
     }
 
     fun void cutAnimation(MeshLines @line, GGen @tf, vec3 ctrl[], vec3 lineColor, int direction) {
