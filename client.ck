@@ -41,13 +41,6 @@ int allCuts[0];
 
 for (0 => int i; i < CHANNELS; ++i) {
     threads[i].connect2dac(i);
-
-
-    // threads[i].init(TriOsc osc);
-
-    // } else {
-    //     threads[i].init(SawOsc osc);
-    // }
 }
 
 1::second => now;
@@ -67,6 +60,9 @@ OscMsg msg;
 oin.addAddress("/server/cycle");
 oin.addAddress("/server/segs");
 oin.addAddress("/server/chord");
+oin.addAddress("/server/stage");
+
+/// ---------- ID ---------- /////
 
 "localhost" => string hostname;
 0 => int ID;
@@ -82,7 +78,35 @@ OscOut xmit;
 // aim the transmitter at destination
 xmit.dest(hostname, port);
 
+
+@(0.820, 0.937, 0.980, 1) => vec4 textColor;
+GText @currentInstruction;
+null @=> currentInstruction;
+
+fun void addInstruction(string instruction) {
+    if (currentInstruction != null)
+        currentInstruction --< GG.scene();
+    GText text;
+    text.size(0.2);
+    text.text(instruction);
+    text.color(textColor);
+    text.pos(@(0, 0, 0));
+    text --> GG.scene();
+    text @=> currentInstruction;
+}
+
+
+if (ID == 0) {
+    addInstruction(
+    "Slowly, intentionally
+    Draw 5 horizontal at different pitches");
+} else if (ID >= 1 && ID <= 4) {
+    addInstruction("Wait");
+}
+
+
 0 => int STEP;
+0 => int STAGE;
 
 fun void serverListener() {
     while (true) {
@@ -98,6 +122,35 @@ fun void serverListener() {
                         <<< "cycle updated:", cycle / second, "s" >>>;
                     }
                 }
+            } else if (msg.address == "/server/stage") {
+                msg.getInt(0) => int stage;
+                // new not equal to old
+                if (stage != STAGE) {
+                    if (stage == 1) {
+                        if (ID == 0) {
+                            addInstruction(
+                            "Again, slowly, intentionally
+                            Draw 5 horizontal at different pitches");
+                        } else if (ID == 1) {
+                            addInstruction(
+                            "
+                            Wait til player 0 is done
+                            Then Slowly, intentionally
+                            Draw 5 vertical at different pitches");
+                        } else {
+                            addInstruction("Wait");
+                        }
+                    }
+
+                    else if (stage == 2) {
+                            addInstruction("
+                            At a moderate speed,
+                            Draw lines");
+                    }
+                    stage => STAGE;
+                }
+
+
             } else if (msg.address == "/server/chord") {
                 msg.getInt(0) => int step;
                 if (step != STEP) {
@@ -200,13 +253,13 @@ fun void cutThread(int direction) {
             }
         }
     }
-    if (minN >= 0) {
+    if (minN >= 0) { // if found
         threads[minN].off();
         threadCut.cut(targetNote);
         1 => allCuts[threads[minN].idx];
         // send to server which line to cut
         sendCutLine(threads[minN].idx, direction);
-    } else {
+    } else { // if did not find
         1000 => minDiff;
         -1 => minN;
         // then find the closest line from allLinePos
@@ -567,7 +620,7 @@ fun void prePopulate(int numLines) {
 }
 
 // each prepopulates 5 horizontal for now
-prePopulate(10);
+// prePopulate(10);
 
 
 // main loop

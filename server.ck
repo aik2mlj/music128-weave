@@ -63,6 +63,7 @@ xmit.dest(hostname, port);
 0 => int THEME;
 0 => int randomRot;
 0 => int scroll;
+0 => int STAGE;
 
 Lines lines(xmit, bpm) --> GG.scene();
 
@@ -144,10 +145,21 @@ fun void keyboardHandler() {
                 // lines.clearSegs();
                 lines.rotatingTheme();
             }
+        } else if (UI.isKeyPressed(UI_Key.Space, false)) {
+            ++STAGE;
+            sendStage();
         }
     }
 }
 spork ~ keyboardHandler();
+
+// server tells performers / clients instructions
+fun void sendStage() {
+    xmit.start("/server/stage");
+    xmit.add(STAGE);
+    xmit.send();
+}
+
 
 // seems unneeded
 fun void sendCycle() {
@@ -164,6 +176,9 @@ fun void chordSequencer() {
         <<< "chord step broadcast:", step >>>;
     }
 }
+
+// make that the chordSequencer broadcast is triggered by line cutting
+
 spork ~ chordSequencer();
 
 // main loop
