@@ -145,7 +145,6 @@ fun void keyboardHandler() {
             }
         } else if (UI.isKeyPressed(UI_Key.Space, false)) {
             ++STAGE;
-            spork ~ sendStage();
         }
     }
 }
@@ -160,6 +159,7 @@ fun void sendStage() {
         xmit.send();
     }
 }
+spork ~ sendStage();
 
 // ---------- CUTTING ---------- //
 class State {
