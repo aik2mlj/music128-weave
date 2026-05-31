@@ -153,9 +153,9 @@ spork ~ keyboardHandler();
 // server tells performers / clients instructions
 fun void sendStage() {
     xmit.start("/server/stage");
-    xmit.add(STAGE);
     while (true) {
         10::ms => now;
+        xmit.add(STAGE);
         xmit.send();
     }
 }
