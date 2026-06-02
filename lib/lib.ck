@@ -18,8 +18,10 @@ public class Lib {
                  base.z + Math.random2f(-0.1, 0.1));
     }
 
+    fun static float easeInQuad(float t) { return t * t; }
     fun static float easeOutQuad(float t) { return 1.0 - (1.0 - t) * (1.0 - t); }
 
+    fun static float easeInCubic(float t) { return t * t * t; }
     fun static float easeOutCubic(float t) { return 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t); }
 
     fun static float smoothstep(float t) { return t * t * (3.0 - 2.0 * t); }

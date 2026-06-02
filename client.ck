@@ -486,7 +486,7 @@ fun void keyboardHandler() {
             // fake a thread pos
             Math.randomf() * 2 - 1 => gt.axis[4];
             addThread(1);
-        } else if (UI.isKeyPressed(UI_Key.Space, false)) {
+        } else if (UI.isKeyPressed(UI_Key.Enter, false)) {
             1 => gt.buttonPressed;
             gt.buttonPress.broadcast();
             10::ms => now;

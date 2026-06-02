@@ -364,6 +364,7 @@ public class Lines extends GGen {
             GG.nextFrame() => now;
             line.posZ() => float z;
             (z - MIN_Z) / (MAX_Z - MIN_Z) => float zScale;
+            Lib.easeInQuad(zScale) => zScale;
             @(c.x, c.y, c.z, zScale) => line.color;
         }
     }

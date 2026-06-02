@@ -61,7 +61,6 @@ NoteProvider provider;
 
 /// ---------- VISUAL ---------- /////
 
-0 => int THEME;
 0 => int randomRot;
 0 => int scroll;
 0 => int STAGE;
@@ -87,6 +86,22 @@ fun void camZoomIn(dur d) {
     }
 }
 spork ~ camZoomIn(10::second);
+
+fun void camZoomOut(dur d) {
+    // Camera zoom out at the end
+    0 => float initPosZ => cam.posZ;
+    100 => float targetPosZ;
+    0 => float initPosY => cam.posY;
+    20 => float targetPosY;
+    now => time start;
+    while (now - start < d) {
+        GG.nextFrame() => now;
+        (now - start) / d => float t;
+        Lib.easeInCubic(t) => float tEased;
+        Math.map2(tEased, 0, 1, initPosZ, targetPosZ) => cam.posZ;
+        Math.map2(tEased, 0, 1, initPosY, targetPosY) => cam.posY;
+    }
+}
 
 // prepopulate
 // lines.spawnLines_randomRot(100);
@@ -139,16 +154,15 @@ fun void keyboardHandler() {
             // TODO: optimize
             sendCycle();
             lines.updateSegs();
-        } else if (UI.isKeyPressed(UI_Key.Enter, false)) {
-            // switch to the second theme
-            <<< "theme changed" >>>;
-            ++THEME;
-            if (THEME == 1) {
+        } else if (UI.isKeyPressed(UI_Key.Space, false)) {
+            <<< "STAGE changed" >>>;
+            ++STAGE;
+            if (STAGE == 1) {
                 // scrolling
                 1 => scroll;
                 0 => randomRot;
                 lines.scrollingTheme();
-            } else if (THEME == 2) {
+            } else if (STAGE == 2) {
                 // rotating
                 1 => randomRot;
                 0 => scroll;
@@ -157,9 +171,9 @@ fun void keyboardHandler() {
                 // temporarily remove all the segments
                 // lines.clearSegs();
                 lines.rotatingTheme();
+            } else if (STAGE == 3) {
+                spork ~ camZoomOut(10::second);
             }
-        } else if (UI.isKeyPressed(UI_Key.Space, false)) {
-            ++STAGE;
         }
     }
 }
