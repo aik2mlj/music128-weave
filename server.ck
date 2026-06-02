@@ -68,6 +68,9 @@ NoteProvider provider;
 
 Lines lines(xmit, bpm) --> GG.scene();
 
+// add fireflies
+Fireflies fireflies --> GG.scene();
+
 fun void camZoomIn(dur d) {
     // Camera zoom in at the beginning
     100 => float initPosZ => cam.posZ;
@@ -145,8 +148,6 @@ fun void keyboardHandler() {
                 1 => scroll;
                 0 => randomRot;
                 lines.scrollingTheme();
-                // add fireflies
-                Fireflies fireflies --> GG.scene();
             } else if (THEME == 2) {
                 // rotating
                 1 => randomRot;
