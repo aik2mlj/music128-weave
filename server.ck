@@ -23,11 +23,8 @@ GG.bloomPass().levels(9);
 GG.scene().light() @=> GLight light;
 0. => light.intensity;
 
-// // set an orbit camera as the main camera
-GOrbitCamera cam => GG.scene().camera;
-// // position the camera
-0.00001 => cam.posZ;
-// cam.orthographic();
+// // set a camera as the main camera
+GCamera cam => GG.scene().camera;
 
 BPM bpm;
 bpm.tempo(40);
@@ -70,6 +67,23 @@ NoteProvider provider;
 0 => int STAGE;
 
 Lines lines(xmit, bpm) --> GG.scene();
+
+fun void camZoomIn(dur d) {
+    // Camera zoom in at the beginning
+    100 => float initPosZ => cam.posZ;
+    0 => float targetPosZ;
+    20 => float initPosY => cam.posY;
+    0 => float targetPosY;
+    now => time start;
+    while (now - start < d) {
+        GG.nextFrame() => now;
+        (now - start) / d => float t;
+        Lib.easeOutCubic(t) => float tEased;
+        Math.map2(tEased, 0, 1, initPosZ, targetPosZ) => cam.posZ;
+        Math.map2(tEased, 0, 1, initPosY, targetPosY) => cam.posY;
+    }
+}
+spork ~ camZoomIn(10::second);
 
 // prepopulate
 // lines.spawnLines_randomRot(100);

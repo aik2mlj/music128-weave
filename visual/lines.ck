@@ -99,8 +99,8 @@ public class Lines extends GGen {
         if (scroll) {
             spork ~ scrollLine(direction, line) @=> ls.scrollShred;
         }
-        if (randomRot || scroll)
-            spork ~ animateLine(line) @=> ls.animateShred;
+        // if (randomRot || scroll)
+        spork ~ animateLine(line) @=> ls.animateShred;
 
         allLines[id] << ls;
 

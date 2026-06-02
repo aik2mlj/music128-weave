@@ -17,4 +17,10 @@ public class Lib {
         return @(base.x + Math.random2f(-0.1, 0.1), base.y + Math.random2f(-0.1, 0.1),
                  base.z + Math.random2f(-0.1, 0.1));
     }
+
+    fun static float easeOutQuad(float t) { return 1.0 - (1.0 - t) * (1.0 - t); }
+
+    fun static float easeOutCubic(float t) { return 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t); }
+
+    fun static float smoothstep(float t) { return t * t * (3.0 - 2.0 * t); }
 }
