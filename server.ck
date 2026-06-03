@@ -63,7 +63,7 @@ NoteProvider provider;
 
 0 => int randomRot;
 0 => int scroll;
-0 => int STAGE;
+
 
 Lines lines(xmit, bpm) --> GG.scene();
 
@@ -110,6 +110,7 @@ fun void camZoomOut(dur d) {
 
 Chords chords;
 0 => int step;
+0 => int STAGE;
 
 fun void clientListener() {
     while (true) {
@@ -174,10 +175,25 @@ fun void keyboardHandler() {
             } else if (STAGE == 3) {
                 spork ~ camZoomOut(10::second);
             }
+        } else if (gt.buttonPress) {
+            (step + 1) % 7 => step;
         }
     }
 }
 spork ~ keyboardHandler();
+
+
+fun void sendChord() {
+    while (true) {
+        10::ms => now;
+        xmit.start("/server/chord");
+        step => xmit.add;
+        xmit.send();
+    }
+}
+
+spork ~ sendChord();
+
 
 // server tells performers / clients instructions
 fun void sendStage() {
@@ -277,24 +293,8 @@ fun void sendCycle() {
 }
 
 
-fun void chordSequencer() {
-    while (true) {
-        gt.buttonPress => now;
-        (step + 1) % 7 => step;
-        <<< "chord step broadcast:", step >>>;
-    }
-}
-
-// make that the chordSequencer broadcast is triggered by line cutting
-
-spork ~ chordSequencer();
-
 // main loop
 while (true) {
     GG.nextFrame() => now;
-    // continuous send
-    xmit.start("/server/chord");
-    step => xmit.add;
     randomRot => xmit.add;
-    xmit.send();
 }

@@ -169,6 +169,10 @@ fun void serverListener() {
                             addInstruction("At a moderate speed", "Draw vertical threads");
                         }
                     }
+
+                    else if (stage == 3) {
+                        addInstruction("No action needed now");
+                    }
                     stage => STAGE;
                 }
 
