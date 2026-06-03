@@ -9,7 +9,6 @@
 @import "sounds/thread.ck"
 @import "sounds/thread_cut.ck"
 
-NoteProvider provider;
 Chords chords;
 Scales scales;
 
@@ -259,7 +258,7 @@ fun void updateExistingRhythms(dur segXs[], dur segYs[]) {
 fun void cutThread(int idx) {
     // this idx is the index in allLinePos etc.
     // so need to iterate threads to see if if any of them have this idx
-    provider.getNote(Math.randomf()) => int targetNote;
+    NP.getNote(Math.randomf()) => int targetNote;
     threadCut.cut(targetNote);
     for (0 => int i; i < CHANNELS; i++) {
         if (threads[i].idx == idx && threads[i].isOn()) {
@@ -352,7 +351,7 @@ fun void addThread(int direction, int prepopulate) {
     allLinePos << pos;
     allLineDir << direction;
 
-    provider.getNote(pos) => note;
+    NP.getNote(pos) => note;
 
     // convert it to freq, starting from C
     // thread.freq(Std.mtof(48 + note));
@@ -385,14 +384,14 @@ fun void sendAddLine(Thread @thread) {
 // for changing the entire chord/ scale scope
 
 fun void chordChanger(int input[], int pitchBend) {
-    provider.notes @=> int oldNotes[]; // save it！
-    input @=> provider.notes;
+    NP.notes @=> int oldNotes[]; // save it！
+    input @=> NP.notes;
 
     // sonically
     for (0 => int i; i < CHANNELS; i++) {
         if (threads[i].isOn()) {
             // update the frequency
-            provider.getNote(threads[i].pos) => int note;
+            NP.getNote(threads[i].pos) => int note;
             // threads[i].freq(Std.mtof(48 + note));
 
             if (pitchBend) {
@@ -418,7 +417,7 @@ fun void chordChanger(int input[], int pitchBend) {
 
         input[idx] - oldNotes[idx] => int semitoneShift;
         // 12 semitones within one octave => compute the pos shift within this full range
-        semitoneShift * 1.0 / (provider.octaves * 12) => float posShift;
+        semitoneShift * 1.0 / (NP.octaves * 12) => float posShift;
 
         allLinePos[i] + posShift => float newPos;
 
@@ -443,7 +442,7 @@ fun void sendLinePos(int allLineDir[], float allLinePos[]) {
 
 
 // for adding new chord on the context of existing chord(s)
-fun void chordAdder(int input[]) { input @=> provider.notes; }
+fun void chordAdder(int input[]) { input @=> NP.notes; }
 
 // need to sendAddLine
 fun void drawHandler() {
