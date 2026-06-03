@@ -229,34 +229,45 @@ fun void keyboardHandler() {
             sendCycle();
             lines.updateSegs();
         } else if (UI.isKeyPressed(UI_Key.Space, false)) {
-            <<< "STAGE changed" >>>;
-            ++STAGE;
-            if (STAGE == 1) {
-            } else if (STAGE == 2) {
-                // scrolling
-                1 => scroll;
-                0 => randomRot;
-                spork ~ fireflies.drifting();
-                lines.scrollingTheme();
-            } else if (STAGE == 3) {
-                // rotating
-                1 => randomRot;
-                0 => scroll;
-                // change chord with huge pitch bend
-                (step + 1) % 7 => step;
-                // temporarily remove all the segments
-                // lines.clearSegs();
-                lines.rotatingTheme();
-                spork ~ camZoomSmoothStep(@(0, 2, 16), 10::second);
-            } else if (STAGE == 4) {
-                spork ~ camZoomOut(@(0, 20, 200), 20::second);
-                spork ~ duplicateWorld(5);
-            }
+            changeStage();
         }
     }
 }
 spork ~ keyboardHandler();
 
+fun void gtHandler() {
+    while (true) {
+        gt.buttonPress => now;
+        changeStage();
+    }
+}
+spork ~ gtHandler();
+
+fun void changeStage() {
+    <<< "STAGE changed" >>>;
+    ++STAGE;
+    if (STAGE == 1) {
+    } else if (STAGE == 2) {
+        // scrolling
+        1 => scroll;
+        0 => randomRot;
+        spork ~ fireflies.drifting();
+        lines.scrollingTheme();
+    } else if (STAGE == 3) {
+        // rotating
+        1 => randomRot;
+        0 => scroll;
+        // change chord with huge pitch bend
+        (step + 1) % 7 => step;
+        // temporarily remove all the segments
+        // lines.clearSegs();
+        lines.rotatingTheme();
+        spork ~ camZoomSmoothStep(@(0, 2, 16), 10::second);
+    } else if (STAGE == 4) {
+        spork ~ camZoomOut(@(0, 20, 200), 20::second);
+        spork ~ duplicateWorld(5);
+    }
+}
 
 fun void sendChord() {
     while (true) {
