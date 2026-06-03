@@ -89,7 +89,7 @@ spork ~ camZoomIn(10::second);
 fun void camZoomOut(dur d) {
     // Camera zoom out at the end
     0 => float initPosZ => cam.posZ;
-    100 => float targetPosZ;
+    200 => float targetPosZ;
     0 => float initPosY => cam.posY;
     20 => float targetPosY;
     now => time start;
@@ -235,8 +235,8 @@ fun void keyboardHandler() {
                 // lines.clearSegs();
                 lines.rotatingTheme();
             } else if (STAGE == 4) {
-                spork ~ camZoomOut(10::second);
-                spork ~ duplicateWorld(5);
+                spork ~ camZoomOut(20::second);
+                spork ~ duplicateWorld(7);
             }
         }
     }
