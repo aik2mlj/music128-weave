@@ -86,19 +86,31 @@ fun void camZoomIn(dur d) {
 }
 spork ~ camZoomIn(10::second);
 
-fun void camZoomOut(dur d) {
+fun void camZoomOut(vec3 targetPos, dur d) {
     // Camera zoom out at the end
-    0 => float initPosZ => cam.posZ;
-    200 => float targetPosZ;
-    0 => float initPosY => cam.posY;
-    20 => float targetPosY;
+    cam.pos() => vec3 initPos;
     now => time start;
     while (now - start < d) {
         GG.nextFrame() => now;
         (now - start) / d => float t;
         Lib.easeInCubic(t) => float tEased;
-        Math.map2(tEased, 0, 1, initPosZ, targetPosZ) => cam.posZ;
-        Math.map2(tEased, 0, 1, initPosY, targetPosY) => cam.posY;
+        Math.map2(tEased, 0, 1, initPos.x, targetPos.x) => cam.posX;
+        Math.map2(tEased, 0, 1, initPos.y, targetPos.y) => cam.posY;
+        Math.map2(tEased, 0, 1, initPos.z, targetPos.z) => cam.posZ;
+    }
+}
+
+fun void camZoomSmoothStep(vec3 targetPos, dur d) {
+    // Camera zoom out at the end
+    cam.pos() => vec3 initPos;
+    now => time start;
+    while (now - start < d) {
+        GG.nextFrame() => now;
+        (now - start) / d => float t;
+        Lib.smoothstep(t) => float tEased;
+        Math.map2(tEased, 0, 1, initPos.x, targetPos.x) => cam.posX;
+        Math.map2(tEased, 0, 1, initPos.y, targetPos.y) => cam.posY;
+        Math.map2(tEased, 0, 1, initPos.z, targetPos.z) => cam.posZ;
     }
 }
 
@@ -234,8 +246,9 @@ fun void keyboardHandler() {
                 // temporarily remove all the segments
                 // lines.clearSegs();
                 lines.rotatingTheme();
+                spork ~ camZoomSmoothStep(@(0, 2, 16), 10::second);
             } else if (STAGE == 4) {
-                spork ~ camZoomOut(20::second);
+                spork ~ camZoomOut(@(0, 20, 200), 20::second);
                 spork ~ duplicateWorld(7);
             }
         }
