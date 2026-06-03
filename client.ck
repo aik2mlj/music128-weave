@@ -259,11 +259,11 @@ fun void updateExistingRhythms(dur segXs[], dur segYs[]) {
 fun void cutThread(int idx) {
     // this idx is the index in allLinePos etc.
     // so need to iterate threads to see if if any of them have this idx
+    provider.getNote(Math.randomf()) => int targetNote;
+    threadCut.cut(targetNote);
     for (0 => int i; i < CHANNELS; i++) {
         if (threads[i].idx == idx && threads[i].isOn()) {
             threads[i].off();
-            provider.getNote(threads[i].pos) => int targetNote;
-            threadCut.cut(targetNote);
             <<< "cut thread", idx >>>;
         }
     }

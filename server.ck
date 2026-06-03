@@ -57,7 +57,6 @@ xmit.dest(hostname, port);
 
 // Globals
 Global.gt @=> GameTrak @gt;
-NoteProvider provider;
 
 /// ---------- VISUAL ---------- /////
 

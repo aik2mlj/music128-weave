@@ -161,10 +161,16 @@ public class Lines extends GGen {
         // cut num random line from any player
         0 => int cutNum;
         0 => int attemptNum;
+        int idlist[0];
         int ids[0], idxs[0];
+        for (int i; i < MAX_PLAYER_NUM; ++i) {
+            if (allLines[i].size() > 0) {
+                idlist << i;
+            }
+        }
         while (cutNum < num && attemptNum < 1000) {
             ++attemptNum;
-            Math.random2(0, MAX_PLAYER_NUM - 1) => int id;
+            idlist[Math.random2(0, idlist.size() - 1)] => int id;
             if (allLines[id].size() > 0) {
                 Math.random2(0, allLines[id].size() - 1) => int idx;
                 if (!allLines[id][idx].cut && allLines[id][idx].direction == direction) {
