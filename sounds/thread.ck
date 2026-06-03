@@ -8,7 +8,7 @@ public class Thread {
 
     BPM bpm;
 
-    ADSR env => LPF lpf => Chorus chorus => NRev rev;
+    ADSR env => LPF lpf => Chorus chorus => NRev rev => Gain mixGain;
     lpf.set(800, 1);
     rev.gain(0.5);
     rev.mix(0.2);
@@ -85,7 +85,7 @@ public class Thread {
     }
 
 
-    fun void connect2dac(int chan) { rev => dac.chan(chan % dac.channels()); }
+    fun void connect2dac(int chan) { mixGain => dac.chan(chan % dac.channels()); }
 
     //    fun void connect2dac(int chan) { rev => dac.chan(chan); }
 
@@ -113,6 +113,19 @@ public class Thread {
             rhythmShred.exit();
             null @=> rhythmShred;
         }
+    }
+
+    fun void fadeout(dur duration) {
+        time start;
+        mixGain.gain() => float initGain;
+        while (now - start < duration) {
+            10::ms => now;
+            (now - start) / duration => float t;
+            Lib.easeOutCubic(t) => t;
+            Math.map2(t, 0, 1, initGain, 0.) => mixGain.gain;
+            <<< mixGain.gain() >>>;
+        }
+        this.off();
     }
 
     fun void rhythmicPause(dur segments[]) {
