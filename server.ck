@@ -131,7 +131,7 @@ fun void fadeInWorld(Lines @w, dur d) {
 // fades in, so the multiverse materializes along with the camera zoom-out.
 fun void duplicateWorld(int num) {
     num / 2 => int half;
-    30 => float distance;
+    40 => float distance;
     15::second => dur spawnSpan; // spread spawning across the zoom-out
     7::second => dur fadeDur;    // per-world fade-in time
     num * num * num - 1 => int total;
@@ -250,7 +250,7 @@ fun void keyboardHandler() {
                 spork ~ camZoomSmoothStep(@(0, 2, 16), 10::second);
             } else if (STAGE == 4) {
                 spork ~ camZoomOut(@(0, 20, 200), 20::second);
-                spork ~ duplicateWorld(7);
+                spork ~ duplicateWorld(5);
             }
         }
     }
