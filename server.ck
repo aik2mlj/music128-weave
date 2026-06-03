@@ -175,8 +175,6 @@ fun void keyboardHandler() {
             } else if (STAGE == 3) {
                 spork ~ camZoomOut(10::second);
             }
-        } else if (gt.buttonPress) {
-            (step + 1) % 7 => step;
         }
     }
 }
@@ -210,24 +208,21 @@ spork ~ sendStage();
 
 fun void cutSpeedHandler() {
     -0.011 => float cutVel;
-    100 => float minVel;
-    int cut;
+    0.5::second => dur coldTime;
     time lastCutTime;
     while (true) {
         // when the negative velocity is big enough
         10::ms => now;
-        if (gt.vel[2] < cutVel && now - lastCutTime > 0.5::second) {
+        if (gt.vel[2] < cutVel && now - lastCutTime > coldTime) {
             cutLine(0);
             now => lastCutTime;
+            (step + 1) % 7 => step;
             <<< "cutting left tether" >>>;
-        } else if (gt.vel[5] < cutVel && now - lastCutTime > 0.5::second) {
+        } else if (gt.vel[5] < cutVel && now - lastCutTime > coldTime) {
             cutLine(1);
             now => lastCutTime;
+            (step + 1) % 7 => step;
             <<< "cutting right tether" >>>;
-        }
-        if (gt.vel[2] < minVel) {
-            gt.vel[2] => minVel;
-            <<< "minvel update", minVel >>>;
         }
         // <<< "v2:", gt.vel[2], "v5:", gt.vel[5] >>>;
     }
