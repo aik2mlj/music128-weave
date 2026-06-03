@@ -104,7 +104,7 @@ fun void addInstruction(string line1, string line2) {
     if (currentInstruction2 != null)
         currentInstruction2 --< GG.scene();
     GText text1;
-    text1.size(0.2);
+    text1.size(0.15);
     text1.text(line1);
     text1.color(textColor);
     text1.pos(@(0, 0.15, 0));
@@ -112,7 +112,7 @@ fun void addInstruction(string line1, string line2) {
     text1 @=> currentInstruction;
 
     GText text2;
-    text2.size(0.2);
+    text2.size(0.15);
     text2.text(line2);
     text2.color(textColor);
     text2.pos(@(0, -0.15, 0));
@@ -152,11 +152,12 @@ fun void serverListener() {
                 if (stage != STAGE) {
                     if (stage == 1) {
                         if (ID == 0) {
-                            addInstruction("Again Slowly, intentionally",
+                            addInstruction("Again, slowly, intentionally",
                                            "Draw 5 horizontal threads");
                         } else if (ID == 1) {
-                            addInstruction("Wait til player 0 is done",
-                                           "Then slowly, intentionally draw 5 vertical threads");
+                            addInstruction(
+                                "Wait til drawer 0 is done with her five lines",
+                                "Then slowly, draw 3 vertical threads at different pitches");
                         } else {
                             addInstruction("Wait");
                         }
@@ -164,9 +165,13 @@ fun void serverListener() {
 
                     else if (stage == 2) {
                         if (ID == 0 || ID == 2 || ID == 4) {
-                            addInstruction("At a moderate speed", "Draw horizontal threads");
+                            addInstruction(
+                                "About every 3 seconds, draw one horizontal thread",
+                                "Try placing each at a different pitch; draw with intention");
                         } else {
-                            addInstruction("At a moderate speed", "Draw vertical threads");
+                            addInstruction(
+                                "About every 3 seconds, draw one vertical thread",
+                                "Try to placing each at a different pitch; draw with intention");
                         }
                     }
 
