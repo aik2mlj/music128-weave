@@ -257,6 +257,22 @@ public class MeshLines extends GMesh {
         textureScale(@(1, 1));
     }
 
+    // independent clone: fresh material + geometry with all uniforms copied.
+    // positions are NOT copied (they live in an unreadable storage buffer) —
+    // the caller is expected to set them (e.g. rebuilt from bezier ctrl points).
+    fun MeshLines clone() {
+        MeshLines l;
+        l.width(width());
+        l.color(color());
+        l.visibility(visibility());
+        l.colorMode(colorMode());
+        l.widthMode(widthMode());
+        l.loop(loop());
+        l.sizeAttenuation(sizeAttenuation());
+        l.scaleDown(scaleDown());
+        return l;
+    }
+
     // == PUBLIC API =======================================================
     fun void positions(vec3 p[]) {
         if (p == null || p.size() < 2) {

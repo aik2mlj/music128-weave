@@ -7,11 +7,56 @@ class LineStruct {
     float vertPos, horizPos; // one is the line's world coord, the other is DELETE-1
     vec3 ctrl[0];            // 4 bezier control points
     vec3 color;              // per-line color
+    vec4 baseColor;          // displayed color (rgb + alpha) captured at clone time
     int direction;
     int cut;
 
     Shred @scrollShred;
     Shred @animateShred;
+
+    // deep clone: fresh line + fresh transform GGen, with transforms and
+    // scalar state copied. Caller is responsible for parenting l.tf.
+    // Shreds are NOT copied — clones are static duplicates.
+    fun LineStruct clone() {
+        LineStruct l;
+
+        line.clone() @=> l.line;
+        l.line --> l.tf; // l.tf is auto-instantiated with the LineStruct
+
+        // rebuild the (independent) geometry from the stored bezier ctrl points
+        if (ctrl.size() >= 4)
+            Lib.bezier(ctrl[0], ctrl[1], ctrl[2], ctrl[3], 200) => l.line.positions;
+
+        // snapshot the original's currently displayed color (rgb + depth alpha)
+        line.color() => l.baseColor;
+
+        // copy line's local transform
+        l.line.posX(line.posX());
+        l.line.posY(line.posY());
+        l.line.posZ(line.posZ());
+        l.line.rotX(line.rotX());
+        l.line.rotY(line.rotY());
+        l.line.rotZ(line.rotZ());
+
+        // copy the tf's transform (carries the rotating-theme rotation)
+        l.tf.posX(tf.posX());
+        l.tf.posY(tf.posY());
+        l.tf.posZ(tf.posZ());
+        l.tf.rotX(tf.rotX());
+        l.tf.rotY(tf.rotY());
+        l.tf.rotZ(tf.rotZ());
+
+        // copy scalar state
+        vertPos => l.vertPos;
+        horizPos => l.horizPos;
+        color => l.color;
+        direction => l.direction;
+        cut => l.cut;
+        for (auto c : ctrl)
+            l.ctrl << c;
+
+        return l;
+    }
 }
 
 public class Lines extends GGen {
@@ -44,6 +89,29 @@ public class Lines extends GGen {
         b @=> bpm;
         // spork ~ rotateLines() @=> rotateShred;
         spork ~ sendCutLines();
+    }
+
+    fun Lines clone() {
+        Lines l(xmit, bpm);
+        for (0 => int id; id < MAX_PLAYER_NUM; id++) {
+            for (0 => int i; i < allLines[id].size(); i++) {
+                allLines[id][i].clone() @=> LineStruct @nls;
+                nls.tf --> l;
+                l.allLines[id] << nls;
+            }
+        }
+        return l;
+    }
+
+    // scale every line's alpha by `a` (relative to its captured baseColor).
+    // used to fade a whole cloned world in/out. a in [0, 1].
+    fun void setWorldAlpha(float a) {
+        for (0 => int id; id < MAX_PLAYER_NUM; id++) {
+            for (0 => int i; i < allLines[id].size(); i++) {
+                allLines[id][i].baseColor => vec4 c;
+                allLines[id][i].line.color(@(c.x, c.y, c.z, c.w * a));
+            }
+        }
     }
 
     fun float gt2x(float gt) { return Math.map2(gt, 0., 1., MIN_X, MAX_X); }

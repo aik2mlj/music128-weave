@@ -102,6 +102,68 @@ fun void camZoomOut(dur d) {
     }
 }
 
+// fade a cloned world from invisible to full over duration d.
+fun void fadeInWorld(Lines @w, dur d) {
+    now => time start;
+    while (now - start < d) {
+        GG.nextFrame() => now;
+        (now - start) / d => float t;
+        Lib.easeInCubic(t) => float a;
+        w.setWorldAlpha(a);
+    }
+    w.setWorldAlpha(1.);
+}
+
+// duplicate the world into a num^3 grid, with the original world in the middle.
+// worlds are spawned gradually (cascading outward from the center) and each
+// fades in, so the multiverse materializes along with the camera zoom-out.
+fun void duplicateWorld(int num) {
+    num / 2 => int half;
+    30 => float distance;
+    15::second => dur spawnSpan; // spread spawning across the zoom-out
+    7::second => dur fadeDur;    // per-world fade-in time
+    num * num * num - 1 => int total;
+    if (total < 1)
+        1 => total;
+    spawnSpan / total => dur perWorld;
+
+    // iterate rings outward (Chebyshev distance) so worlds cascade from center
+    for (1 => int ring; ring <= half; ring++) {
+        for (0 => int gx; gx < num; gx++) {
+            for (0 => int gy; gy < num; gy++) {
+                for (0 => int gz; gz < num; gz++) {
+                    gx - half => int dx;
+                    if (dx < 0)
+                        -dx => dx;
+                    gy - half => int dy;
+                    if (dy < 0)
+                        -dy => dy;
+                    gz - half => int dz;
+                    if (dz < 0)
+                        -dz => dz;
+                    dx => int r;
+                    if (dy > r)
+                        dy => r;
+                    if (dz > r)
+                        dz => r;
+                    if (r != ring)
+                        continue; // not in this ring yet
+
+                    lines.clone() @=> Lines w;
+                    w --> GG.scene();
+                    (gx - half) $ float * distance => w.posX;
+                    (gy - half) $ float * distance => w.posY;
+                    (gz - half) $ float * distance => w.posZ;
+
+                    w.setWorldAlpha(0.); // start invisible, then fade in
+                    spork ~ fadeInWorld(w, fadeDur);
+                    perWorld => now; // stagger spawns over the zoom-out
+                }
+            }
+        }
+    }
+}
+
 // prepopulate
 // lines.spawnLines_randomRot(100);
 
@@ -174,6 +236,7 @@ fun void keyboardHandler() {
                 lines.rotatingTheme();
             } else if (STAGE == 4) {
                 spork ~ camZoomOut(10::second);
+                spork ~ duplicateWorld(5);
             }
         }
     }
