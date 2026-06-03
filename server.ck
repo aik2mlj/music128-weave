@@ -186,6 +186,7 @@ fun void sendChord() {
         10::ms => now;
         xmit.start("/server/chord");
         step => xmit.add;
+        randomRot => xmit.add;
         xmit.send();
     }
 }
@@ -318,5 +319,4 @@ fun void sendCycle() {
 // main loop
 while (true) {
     GG.nextFrame() => now;
-    randomRot => xmit.add;
 }
