@@ -159,10 +159,10 @@ public class Lines extends GGen {
         0 => int attemptNum;
         int ids[0], idxs[0];
         while (cutNum < num && attemptNum < 100) {
+            ++attemptNum;
             Math.random2(0, MAX_PLAYER_NUM - 1) => int id;
             if (allLines[id].size() > 0) {
                 Math.random2(0, allLines[id].size() - 1) => int idx;
-                ++attemptNum;
                 if (!allLines[id][idx].cut && allLines[id][idx].direction == direction) {
                     if (cutLine(id, idx, direction)) {
                         ids << id;

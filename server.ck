@@ -207,78 +207,105 @@ fun void sendStage() {
 spork ~ sendStage();
 
 // ---------- CUTTING ---------- //
-class State {
-    0 => static int NONE;
-    1 => static int LEFT;
-    2 => static int RIGHT;
-    3 => static int CENTER;
-}
 
-State.NONE => int stateX;
-State.NONE => int stateY;
-
-// the state within this round of weaving.
-// 0 = none, 1 = left seen, 2 = center seen, 3 = right seen
-0 => int roundStage;
-
-fun void cutStateHandler() {
+fun void cutSpeedHandler() {
+    -0.011 => float cutVel;
+    100 => float minVel;
+    int cut;
+    time lastCutTime;
     while (true) {
-        // X, left tether
-        State.NONE => int newState;
-        if (gt.axis[0] < -0.05)
-            State.LEFT => newState;
-        else if (gt.axis[0] > 0.05)
-            State.RIGHT => newState;
-        else
-            State.CENTER => newState;
-
-        // only act on state transitions
-        if (newState != stateX) {
-            newState => stateX;
-
-            if (stateX == State.LEFT && roundStage == 0)
-                1 => roundStage;
-            else if (stateX == State.CENTER && roundStage == 1)
-                2 => roundStage;
-            else if (stateX == State.RIGHT && roundStage == 2)
-                3 => roundStage;
-            else if (stateX == State.CENTER && roundStage == 3) {
-                // if (gt.buttonHeldDown)
-                cutLine(1);
-                0 => roundStage;
-            }
-        }
-
-        // Y, right tether
-        State.NONE => newState;
-        if (gt.axis[4] < -0.05)
-            State.LEFT => newState;
-        else if (gt.axis[4] > 0.05)
-            State.RIGHT => newState;
-        else
-            State.CENTER => newState;
-
-        // only act on state transitions
-        if (newState != stateY) {
-            newState => stateY;
-
-            if (stateY == State.LEFT && roundStage == 0)
-                1 => roundStage;
-            else if (stateY == State.CENTER && roundStage == 1)
-                2 => roundStage;
-            else if (stateY == State.RIGHT && roundStage == 2)
-                3 => roundStage;
-            else if (stateY == State.CENTER && roundStage == 3) {
-                // if (gt.buttonHeldDown)
-                cutLine(0);
-                0 => roundStage;
-            }
-        }
-
+        // when the negative velocity is big enough
         10::ms => now;
+        if (gt.vel[2] < cutVel && now - lastCutTime > 0.5::second) {
+            cutLine(0);
+            now => lastCutTime;
+            <<< "cutting left tether" >>>;
+        } else if (gt.vel[5] < cutVel && now - lastCutTime > 0.5::second) {
+            cutLine(1);
+            now => lastCutTime;
+            <<< "cutting right tether" >>>;
+        }
+        if (gt.vel[2] < minVel) {
+            gt.vel[2] => minVel;
+            <<< "minvel update", minVel >>>;
+        }
+        // <<< "v2:", gt.vel[2], "v5:", gt.vel[5] >>>;
     }
 }
-spork ~ cutStateHandler();
+spork ~ cutSpeedHandler();
+
+// class State {
+//     0 => static int NONE;
+//     1 => static int LEFT;
+//     2 => static int RIGHT;
+//     3 => static int CENTER;
+// }
+//
+// State.NONE => int stateX;
+// State.NONE => int stateY;
+//
+// // the state within this round of weaving.
+// // 0 = none, 1 = left seen, 2 = center seen, 3 = right seen
+// 0 => int roundStage;
+//
+// fun void cutStateHandler() {
+//     while (true) {
+//         // X, left tether
+//         State.NONE => int newState;
+//         if (gt.axis[0] < -0.05)
+//             State.LEFT => newState;
+//         else if (gt.axis[0] > 0.05)
+//             State.RIGHT => newState;
+//         else
+//             State.CENTER => newState;
+//
+//         // only act on state transitions
+//         if (newState != stateX) {
+//             newState => stateX;
+//
+//             if (stateX == State.LEFT && roundStage == 0)
+//                 1 => roundStage;
+//             else if (stateX == State.CENTER && roundStage == 1)
+//                 2 => roundStage;
+//             else if (stateX == State.RIGHT && roundStage == 2)
+//                 3 => roundStage;
+//             else if (stateX == State.CENTER && roundStage == 3) {
+//                 // if (gt.buttonHeldDown)
+//                 cutLine(1);
+//                 0 => roundStage;
+//             }
+//         }
+//
+//         // Y, right tether
+//         State.NONE => newState;
+//         if (gt.axis[4] < -0.05)
+//             State.LEFT => newState;
+//         else if (gt.axis[4] > 0.05)
+//             State.RIGHT => newState;
+//         else
+//             State.CENTER => newState;
+//
+//         // only act on state transitions
+//         if (newState != stateY) {
+//             newState => stateY;
+//
+//             if (stateY == State.LEFT && roundStage == 0)
+//                 1 => roundStage;
+//             else if (stateY == State.CENTER && roundStage == 1)
+//                 2 => roundStage;
+//             else if (stateY == State.RIGHT && roundStage == 2)
+//                 3 => roundStage;
+//             else if (stateY == State.CENTER && roundStage == 3) {
+//                 // if (gt.buttonHeldDown)
+//                 cutLine(0);
+//                 0 => roundStage;
+//             }
+//         }
+//
+//         10::ms => now;
+//     }
+// }
+// spork ~ cutStateHandler();
 
 fun void cutLine(int direction) {
     // randomly cut up to three lines
