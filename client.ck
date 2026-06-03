@@ -131,6 +131,7 @@ if (ID == 0) {
 
 0 => int STEP;
 0 => int STAGE;
+0 => int CUTCOUNT;
 
 fun void serverListener() {
     while (true) {
@@ -217,14 +218,18 @@ fun void serverListener() {
                 //     <<< "\t", segYs[n] / 1::samp >>>;
                 updateExistingRhythms(segXs, segYs);
             } else if (msg.address == "/server/cutlines") {
-                msg.getInt(0) => int size;
-                int ids[size], idxs[size];
-                for (int i; i < size; ++i) {
-                    msg.getInt(1 + i * 2) => ids[i];
-                    msg.getInt(1 + i * 2 + 1) => idxs[i];
-                    // cut Thread sound here if id matches this client
-                    if (ids[i] == ID) {
-                        cutThread(idxs[i]);
+                msg.getInt(0) => int cutCount;
+                if (cutCount != CUTCOUNT) {
+                    cutCount => CUTCOUNT;
+                    msg.getInt(1) => int size;
+                    int ids[size], idxs[size];
+                    for (int i; i < size; ++i) {
+                        msg.getInt(2 + i * 2) => ids[i];
+                        msg.getInt(2 + i * 2 + 1) => idxs[i];
+                        // cut Thread sound here if id matches this client
+                        if (ids[i] == ID) {
+                            cutThread(idxs[i]);
+                        }
                     }
                 }
             }

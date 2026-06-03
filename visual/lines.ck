@@ -36,10 +36,14 @@ public class Lines extends GGen {
 
     Shred @rotateShred;
 
+    0 => int cutCount;
+    int cutIds[], cutIdxs[];
+
     fun @construct(OscOut @x, BPM @b) {
         x @=> xmit;
         b @=> bpm;
         // spork ~ rotateLines() @=> rotateShred;
+        spork ~ sendCutLines();
     }
 
     fun float gt2x(float gt) { return Math.map2(gt, 0., 1., MIN_X, MAX_X); }
@@ -175,19 +179,27 @@ public class Lines extends GGen {
         }
 
         if (cutNum > 0) {
-            // now send ids and idxs
-            sendCutLines(ids, idxs);
+            ++cutCount;
+            ids @=> cutIds;
+            idxs @=> cutIdxs;
         }
     }
 
-    fun void sendCutLines(int ids[], int idxs[]) {
-        xmit.start("/server/cutlines");
-        xmit.add(ids.size());
-        for (0 => int i; i < ids.size(); i++) {
-            xmit.add(ids[i]);
-            xmit.add(idxs[i]);
+    fun void sendCutLines() {
+        while (true) {
+            10::ms => now;
+            if (cutCount > 0) {
+                xmit.start("/server/cutlines");
+                xmit.add(cutCount);
+                xmit.add(cutIds.size());
+                // <<< "sendCutLines", cutCount, cutIds.size() >>>;
+                for (0 => int i; i < cutIds.size(); i++) {
+                    xmit.add(cutIds[i]);
+                    xmit.add(cutIdxs[i]);
+                }
+                xmit.send();
+            }
         }
-        xmit.send();
     }
 
     fun int cutLine(int id, int idx, int direction) {
