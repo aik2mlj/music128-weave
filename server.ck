@@ -159,11 +159,12 @@ fun void keyboardHandler() {
             <<< "STAGE changed" >>>;
             ++STAGE;
             if (STAGE == 1) {
+            } else if (STAGE == 2) {
                 // scrolling
                 1 => scroll;
                 0 => randomRot;
                 lines.scrollingTheme();
-            } else if (STAGE == 2) {
+            } else if (STAGE == 3) {
                 // rotating
                 1 => randomRot;
                 0 => scroll;
@@ -172,7 +173,7 @@ fun void keyboardHandler() {
                 // temporarily remove all the segments
                 // lines.clearSegs();
                 lines.rotatingTheme();
-            } else if (STAGE == 3) {
+            } else if (STAGE == 4) {
                 spork ~ camZoomOut(10::second);
             }
         }

@@ -158,7 +158,7 @@ public class Lines extends GGen {
         0 => int cutNum;
         0 => int attemptNum;
         int ids[0], idxs[0];
-        while (cutNum < num && attemptNum < 100) {
+        while (cutNum < num && attemptNum < 1000) {
             ++attemptNum;
             Math.random2(0, MAX_PLAYER_NUM - 1) => int id;
             if (allLines[id].size() > 0) {
