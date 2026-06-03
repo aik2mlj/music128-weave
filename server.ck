@@ -137,7 +137,7 @@ fun void clientListener() {
                     msg.getFloat(2 + 2 * i + 1) => pos[i];
                 }
                 if (size > 0) {
-                    lines.updatePositions(id, direction, pos);
+                    // lines.updatePositions(id, direction, pos);
                 }
             }
         }
