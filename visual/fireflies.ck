@@ -34,7 +34,6 @@ public class Fireflies extends GGen {
             @(Math.random2f(minX, maxX), Math.random2f(minY, maxY), Math.random2f(minZ, maxZ)) => fireflies[i].translate;
         }
         spork ~ shine();
-        spork ~ drifting();
     }
 
     fun void shine() {

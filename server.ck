@@ -236,6 +236,7 @@ fun void keyboardHandler() {
                 // scrolling
                 1 => scroll;
                 0 => randomRot;
+                spork ~ fireflies.drifting();
                 lines.scrollingTheme();
             } else if (STAGE == 3) {
                 // rotating
