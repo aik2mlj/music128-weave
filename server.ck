@@ -35,7 +35,7 @@ OscIn oin;
 // create our OSC message
 OscMsg msg;
 // use port 6449 (or whatever)
-6448 => oin.port;
+36448 => oin.port;
 // create an address in the receiver, expect an int and a float
 oin.addAddress("/client/addline");
 oin.addAddress("/client/linepos");
@@ -48,7 +48,7 @@ if (me.args()) {
     me.arg(0) => hostname;
 }
 // destination port number
-6449 => int port;
+36449 => int port;
 // sender object
 OscOut xmit;
 // aim the transmitter at destination

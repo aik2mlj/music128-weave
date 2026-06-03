@@ -52,7 +52,7 @@ OscIn oin;
 // create our OSC message
 OscMsg msg;
 // use port 6449 (or whatever)
-6449 => oin.port;
+36449 => oin.port;
 // create an address in the receiver, expect an int and a float
 oin.addAddress("/server/cycle");
 oin.addAddress("/server/segs");
@@ -68,7 +68,7 @@ if (me.args()) {
 }
 // OscOut to server
 // destination port number
-6448 => int port;
+36448 => int port;
 // sender object
 OscOut xmit;
 // aim the transmitter at destination
