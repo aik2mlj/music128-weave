@@ -452,6 +452,9 @@ public class Lines extends GGen {
             (z - MIN_Z) / (MAX_Z - MIN_Z) => float zScale;
             Lib.easeInQuad(zScale) => zScale;
             @(c.x, c.y, c.z, zScale) => line.color;
+            // fix flickering
+            if (Math.fabs(z - MAX_Z) < 0.01)
+                @(c.x, c.y, c.z, 0.) => line.color;
         }
     }
 
