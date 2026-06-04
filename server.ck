@@ -14,6 +14,8 @@ GWindow.title("weave");
 // GWindow.center();
 GWindow.fullscreen();
 
+GWindow.mouseMode(GWindow.MOUSE_DISABLED);
+
 GG.bloom(true);
 GG.bloomPass().intensity(0.5);
 GG.bloomPass().radius(0.7);

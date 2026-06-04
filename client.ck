@@ -124,7 +124,9 @@ fun void addInstruction(string line1, string line2) {
 if (ID == 0) {
     addInstruction("Slowly, intentionally", "Draw 5 horizontal threads");
 } else if (ID >= 1 && ID <= 4) {
-    addInstruction("Wait");
+    addInstruction(
+        "No action right now",
+        "Just know left-tether for horizontal thread, right for vertical, y-axis for pitch");
 }
 
 
