@@ -116,7 +116,7 @@ public class Thread {
     }
 
     fun void fadeout(dur duration) {
-        time start;
+        now => time start;
         mixGain.gain() => float initGain;
         while (now - start < duration) {
             10::ms => now;

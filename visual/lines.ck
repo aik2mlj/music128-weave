@@ -158,10 +158,10 @@ public class Lines extends GGen {
             Lib.random(@(-1.7, 0, 0)) => p2;
             Lib.random(@(-5., 0, 0)) => p3;
         } else {
-            Lib.random(@(0., 5., 0)) => p0;
-            Lib.random(@(0., 1.7, 0)) => p1;
-            Lib.random(@(0., -1.7, 0)) => p2;
-            Lib.random(@(0., -5., 0)) => p3;
+            Lib.random(@(0., -5., 0)) => p0;
+            Lib.random(@(0., -1.7, 0)) => p1;
+            Lib.random(@(0., 1.7, 0)) => p2;
+            Lib.random(@(0., 5., 0)) => p3;
         }
         ls.ctrl << p0 << p1 << p2 << p3;
 
@@ -403,8 +403,9 @@ public class Lines extends GGen {
                 Lib.bezier(ctrl[0], ctrl[1] + @(3.3 * (1 - t), 0, 0),
                            ctrl[2] + @(6.6 * (1 - t), 0, 0), ctrl[3] + @(10 * (1 - t), 0, 0), 200) => line.positions;
             } else {
-                Lib.bezier(ctrl[0], ctrl[1] + @(0, 3.3 * (1 - t), 0),
-                           ctrl[2] + @(0, 6.6 * (1 - t), 0), ctrl[3] + @(0, 10 * (1 - t), 0), 200) => line.positions;
+                Lib.bezier(ctrl[0], ctrl[1] + @(0, -3.3 * (1 - t), 0),
+                           ctrl[2] + @(0, -6.6 * (1 - t), 0), ctrl[3] + @(0, -10 * (1 - t), 0),
+                           200) => line.positions;
             }
         }
     }
