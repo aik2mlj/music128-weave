@@ -181,7 +181,7 @@ fun void serverListener() {
 
                     else if (stage == 4) {
                         for (0 => int i; i < CHANNELS; i++) {
-                            threads[i].fadeout(40::second);
+                            spork ~ threads[i].fadeout(25::second);
                         }
                     }
 

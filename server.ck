@@ -320,7 +320,7 @@ spork ~ cutSpeedHandler();
 
 fun void cutLine(int direction) {
     // randomly cut up to three lines
-    lines.cutRandomLines(3, direction);
+    lines.cutRandomLines(5, direction);
 }
 
 // seems unneeded
