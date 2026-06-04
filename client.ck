@@ -176,7 +176,8 @@ fun void serverListener() {
                     }
 
                     else if (stage == 3) {
-                        addInstruction("No action needed now");
+                        addInstruction("Slowly release your tether ; Then kneel down with one knee",
+                                       "No further action is needed");
                     }
 
                     else if (stage == 4) {
