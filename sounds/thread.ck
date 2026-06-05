@@ -93,7 +93,7 @@ public class Thread {
     }
 
 
-    fun void connect2dac(int chan) { mixGain => dac.chan(chan % dac.channels()); }
+    fun void connect2dac(int chan) { dy => dac.chan(chan % dac.channels()); }
 
     //    fun void connect2dac(int chan) { rev => dac.chan(chan); }
 
