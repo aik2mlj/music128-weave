@@ -123,7 +123,7 @@ fun void addInstruction(string line1, string line2) {
 // initiate
 if (ID == 0) {
     addInstruction("Slowly, intentionally", "Draw 5 horizontal threads");
-} else if (ID >= 1 && ID <= 4) {
+} else if (ID >= 1 && ID <= 5) {
     addInstruction("No action right now. Just know that",
                    "left-tether for horizontal thread, right for vertical, y-axis for pitch");
 }
