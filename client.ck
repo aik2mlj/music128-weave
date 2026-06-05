@@ -132,6 +132,7 @@ if (ID == 0) {
 0 => int STEP;
 0 => int STAGE;
 0 => int CUTCOUNT;
+0 => int STG2CUTCOUNT;
 
 fun void serverListener() {
     while (true) {
@@ -165,15 +166,18 @@ fun void serverListener() {
                     }
 
                     else if (stage == 2) {
-                        if (ID == 0 || ID == 2 || ID == 4) {
-                            addInstruction(
-                                "About every 3 seconds, draw one horizontal thread",
-                                "Try placing each at a different pitch; draw with intention");
-                        } else {
-                            addInstruction(
-                                "About every 3 seconds, draw one vertical thread",
-                                "Try to placing each at a different pitch; draw with intention");
-                        }
+                        // if (ID % 2 == 0) {
+                        //     addInstruction(
+                        //         "About every 3 seconds, draw one horizontal thread",
+                        //         "Try placing each at a different pitch; draw with intention");
+                        // } else {
+                        //     addInstruction(
+                        //         "About every 3 seconds, draw one vertical thread",
+                        //         "Try to placing each at a different pitch; draw with intention");
+                        // }
+                        addInstruction("Wait for drawing signal on screen");
+                        0 => STG2CUTCOUNT;
+                        spork ~ instructionTimer(STG2CUTCOUNT);
                     }
 
                     else if (stage == 3) {
@@ -244,12 +248,100 @@ fun void serverListener() {
                             cutThread(idxs[i]);
                         }
                     }
+
+                    // if in STAGE 2, start the timer for instructions
+                    if (STAGE == 2) {
+                        STG2CUTCOUNT++;
+                        spork ~ instructionTimer(STG2CUTCOUNT);
+                    }
                 }
             }
         }
     }
 }
 spork ~ serverListener();
+
+fun void instructionTimer(int stg2_cutCount) {
+    3::second => dur drawDur;
+    3::second => dur cutDur;
+    1::second => dur togetherCutDur;
+    if (stg2_cutCount == 0) {
+        // clockwise circle according to id
+        cutDur => now;
+        drawDur * ID => now;
+        countDownInstruction(drawDur);
+    } else if (stg2_cutCount == 1) {
+        // counter-clockwise circle according to id
+        cutDur => now;
+        if (ID > 0) {
+            drawDur * (6 - ID) => now;
+        }
+        countDownInstruction(drawDur);
+    } else if (stg2_cutCount == 2) {
+        // complicated manner
+        cutDur => now;
+        if (ID == 3)
+            drawDur => now;
+        else if (ID == 2 || ID == 4)
+            drawDur * 2 => now;
+        else if (ID == 1 || ID == 5)
+            drawDur * 3 => now;
+        countDownInstruction(drawDur);
+
+        if (ID != 1 && ID != 5) {
+            if (ID == 2 || ID == 4)
+                drawDur => now;
+            else if (ID == 3)
+                drawDur * 2 => now;
+            else if (ID == 0)
+                drawDur * 3 => now;
+            countDownInstruction(drawDur);
+        }
+    } else if (stg2_cutCount >= 3 && stg2_cutCount < 6) {
+        // all together draw after cut
+        togetherCutDur => now;
+        countDownInstruction(drawDur);
+    } else if (stg2_cutCount == 6) {
+        // final confrontation, slow drawing
+        togetherCutDur => now;
+        countDownInstruction(
+            cutDur, "Don't release yet, immitate bow drawing; release when cutter releases");
+    }
+}
+
+fun void countDownInstruction(dur drawDur) {
+    drawDur - 3::second => now;
+
+    addInstruction("3");
+    1::second => now;
+    addInstruction("2");
+    1::second => now;
+    addInstruction("1");
+    1::second => now;
+    if (ID % 2 == 0) {
+        addInstruction("Draw one horizontal");
+    } else {
+        addInstruction("Draw one vertical");
+    }
+    1::second => now;
+    addInstruction("Hold your tether; Slowly kneel toward one knee position");
+}
+
+fun void countDownInstruction(dur drawDur, string appendInstruct) {
+    drawDur - 3::second => now;
+
+    addInstruction("3");
+    1::second => now;
+    addInstruction("2");
+    1::second => now;
+    addInstruction("1");
+    1::second => now;
+    if (ID % 2 == 0) {
+        addInstruction("Draw one horizontal", appendInstruct);
+    } else {
+        addInstruction("Draw one vertical", appendInstruct);
+    }
+}
 
 /// ---------- RHYTHM ---------- /////
 

@@ -12,7 +12,7 @@
 GWindow.title("weave");
 // GWindow.windowed(1280, 960);
 // GWindow.center();
-GWindow.fullscreen();
+// GWindow.fullscreen();
 
 GWindow.mouseMode(GWindow.MOUSE_DISABLED);
 
