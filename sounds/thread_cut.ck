@@ -1,12 +1,12 @@
 public class ThreadCut {
     StifKarp karp => ADSR karpEnv => NRev karpRev => Gain mixGain => Dyno dy => dac;
 
-    mixGain.gain(2.0);
+    mixGain.gain(1.0);
 
 
     dy.limit();
     // compensate for the limiter's gain reduction
-    5 => dy.gain;
+    1 => dy.gain;
 
     fun void cut(int inputNote) {
         karpRev.gain(0.5);

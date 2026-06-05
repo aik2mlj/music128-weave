@@ -9,12 +9,12 @@ public class Thread {
     BPM bpm;
 
     ADSR env => LPF lpf => Chorus chorus => NRev rev => Gain mixGain => Dyno dy;
-    mixGain.gain(3);
+    mixGain.gain(1);
 
 
     dy.limit();
     // compensate for the limiter's gain reduction
-    5 => dy.gain;
+    1 => dy.gain;
 
     lpf.set(800, 1);
     rev.gain(0.5);
