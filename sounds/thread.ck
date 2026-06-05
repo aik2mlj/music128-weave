@@ -8,7 +8,14 @@ public class Thread {
 
     BPM bpm;
 
-    ADSR env => LPF lpf => Chorus chorus => NRev rev => Gain mixGain;
+    ADSR env => LPF lpf => Chorus chorus => NRev rev => Gain mixGain => Dyno dy;
+    mixGain.gain(3);
+
+
+    dy.limit();
+    // compensate for the limiter's gain reduction
+    5 => dy.gain;
+
     lpf.set(800, 1);
     rev.gain(0.5);
     rev.mix(0.2);
@@ -17,6 +24,7 @@ public class Thread {
     chorus.modDepth(.4);
     chorus.modFreq(1);
     chorus.mix(.2);
+
 
     Shred @animateShred;
     Shred @rhythmShred;
@@ -31,7 +39,7 @@ public class Thread {
     fun void init(Osc timbre) {
         timbre @=> osc;
         osc => env;
-        osc.gain(0.5);
+        osc.gain(1.0);
     }
 
     // using this to help with pitch bend

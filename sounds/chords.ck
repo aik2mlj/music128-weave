@@ -24,7 +24,8 @@ public class Chords {
     [-1, 6, 10, 13, 15] @=> static int b_maj9[];
     [-6, 1, 8, 10, 5] @=> static int fsharp_maj9[];
     [1, 4, 8, 11] @=> static int csharp_maj7[];
-    [-4, 3, 7, 10] @=> static int aflat_sus2[];
+    [-4, 3, 7, 10] @=> static int aflat_sus2[]; // Ab Eb G
+    [-3, 2, 4, 10] @=> static int a_add4[];     // A D E G
     [-2, 3, 5, 8] @=> static int bflat_9sus4[];
 
     // additional sdm chords

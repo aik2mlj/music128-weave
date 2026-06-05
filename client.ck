@@ -208,11 +208,14 @@ fun void serverListener() {
                         chordChanger(chords.csharp_maj7, randomRot);
                     else if (step == 3)
                         chordChanger(chords.aflat_sus2, randomRot);
+                    // can. add a a_sus2 or 4
                     else if (step == 4)
-                        chordChanger(chords.bflat_9sus4, randomRot);
+                        chordChanger(chords.a_add4, randomRot);
                     else if (step == 5)
-                        chordChanger(chords.chordInverter(chords.bflat_9sus4, 2, 0), randomRot);
+                        chordChanger(chords.bflat_9sus4, randomRot);
                     else if (step == 6)
+                        chordChanger(chords.chordInverter(chords.bflat_9sus4, 2, 0), randomRot);
+                    else if (step == 7)
                         chordChanger(chords.chordInverter(chords.bflat_9sus4, 1, 0), randomRot);
                     step => STEP;
                 }

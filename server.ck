@@ -251,6 +251,7 @@ fun void changeStage() {
     if (STAGE == 1) {
     } else if (STAGE == 2) {
         // scrolling
+        0 => step;
         1 => scroll;
         0 => randomRot;
         spork ~ fireflies.drifting();
@@ -260,7 +261,7 @@ fun void changeStage() {
         1 => randomRot;
         0 => scroll;
         // change chord with huge pitch bend
-        (step + 1) % 7 => step;
+        (step + 1) % 8 => step;
         // temporarily remove all the segments
         // lines.clearSegs();
         lines.rotatingTheme();
@@ -307,12 +308,12 @@ fun void cutSpeedHandler() {
         if (gt.vel[2] < cutVel && now - lastCutTime > coldTime) {
             cutLine(0);
             now => lastCutTime;
-            (step + 1) % 7 => step;
+            (step + 1) % 8 => step;
             <<< "cutting left tether" >>>;
         } else if (gt.vel[5] < cutVel && now - lastCutTime > coldTime) {
             cutLine(1);
             now => lastCutTime;
-            (step + 1) % 7 => step;
+            (step + 1) % 8 => step;
             <<< "cutting right tether" >>>;
         }
         // <<< "v2:", gt.vel[2], "v5:", gt.vel[5] >>>;
@@ -322,7 +323,7 @@ spork ~ cutSpeedHandler();
 
 fun void cutLine(int direction) {
     // randomly cut up to three lines
-    lines.cutRandomLines(5, direction);
+    lines.cutRandomLines(3, direction);
 }
 
 // seems unneeded
