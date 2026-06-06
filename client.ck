@@ -120,6 +120,29 @@ fun void addInstruction(string line1, string line2) {
     text2 @=> currentInstruction2;
 }
 
+// multiple line version
+fun void addInstruction_color(string line1, string line2, vec3 color) {
+    if (currentInstruction != null)
+        currentInstruction --< GG.scene();
+    if (currentInstruction2 != null)
+        currentInstruction2 --< GG.scene();
+    GText text1;
+    text1.size(0.15);
+    text1.text(line1);
+    text1.color(textColor);
+    text1.pos(@(0, 0.15, 0));
+    text1 --> GG.scene();
+    text1 @=> currentInstruction;
+
+    GText text2;
+    text2.size(0.15);
+    text2.text(line2);
+    text2.color(color);
+    text2.pos(@(0, -0.15, 0));
+    text2 --> GG.scene();
+    text2 @=> currentInstruction2;
+}
+
 // initiate
 if (ID == 0) {
     addInstruction("Slowly, intentionally", "Draw 5 horizontal threads");
@@ -307,7 +330,7 @@ fun void instructionTimer(int stg2_cutCount) {
     } else if (stg2_cutCount == 6) {
         // final confrontation, slow drawing
         togetherCutDur => now;
-        countDownInstruction(
+        countDownInstruction_color(
             cutDur, "Don't release yet, immitate bow drawing; release when cutter releases");
     }
 }
@@ -330,7 +353,7 @@ fun void countDownInstruction(dur drawDur) {
     addInstruction("Hold your tether; Slowly kneel toward one knee position");
 }
 
-fun void countDownInstruction(dur drawDur, string appendInstruct) {
+fun void countDownInstruction_color(dur drawDur, string appendInstruct) {
     drawDur - 3::second => now;
 
     addInstruction("3");
@@ -340,9 +363,9 @@ fun void countDownInstruction(dur drawDur, string appendInstruct) {
     addInstruction("1");
     1::second => now;
     if (ID % 2 == 0) {
-        addInstruction("Draw one horizontal", appendInstruct);
+        addInstruction_color("Draw one horizontal", appendInstruct, Color.RED);
     } else {
-        addInstruction("Draw one vertical", appendInstruct);
+        addInstruction_color("Draw one vertical", appendInstruct, Color.RED);
     }
 }
 
