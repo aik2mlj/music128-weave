@@ -579,7 +579,7 @@ fun void chordAdder(int input[]) { input @=> NP.notes; }
 // need to sendAddLine
 fun void drawHandler() {
 
-    0.002 => float v_DEADZONE;
+    0.003 => float v_DEADZONE;
     0.1 => float DEADZONE;
 
     int wasMovingH;
