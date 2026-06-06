@@ -6,7 +6,7 @@ public class ThreadCut {
 
     dy.limit();
     // compensate for the limiter's gain reduction
-    1 => dy.gain;
+    2 => dy.gain;
 
     fun void cut(int inputNote) {
         karpRev.gain(0.5);
