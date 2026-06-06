@@ -579,10 +579,8 @@ fun void chordAdder(int input[]) { input @=> NP.notes; }
 // need to sendAddLine
 fun void drawHandler() {
 
-    0.002 => float DEADZONE;
-
-    int hSlot;
-    int vSlot;
+    0.002 => float v_DEADZONE;
+    0.1 => float DEADZONE;
 
     int wasMovingH;
     int wasMovingV;
@@ -595,20 +593,18 @@ fun void drawHandler() {
 
         // Horizontal thread (axis[2])
         // which includes it being deltaH is positive
-        if (gt.vel[2] > DEADZONE && !wasMovingH && !gt.buttonHeldDown &&
+        if (gt.axis[2] > DEADZONE && gt.vel[2] > v_DEADZONE && !wasMovingH && !gt.buttonHeldDown &&
             now - lastDrawTime > coldTime) {
             1 => wasMovingH;
-            threadNum % CHANNELS => hSlot; // record slot for turning off again
             now => lastDrawTime;
             addThread(0);
         } else if (gt.vel[2] <= 0 && wasMovingH) {
             0 => wasMovingH;
         }
 
-        if (gt.vel[5] > DEADZONE && !wasMovingV && !gt.buttonHeldDown &&
+        if (gt.axis[5] > DEADZONE && gt.vel[5] > v_DEADZONE && !wasMovingV && !gt.buttonHeldDown &&
             now - lastDrawTime > coldTime) {
             1 => wasMovingV;
-            threadNum % CHANNELS => vSlot;
             now => lastDrawTime;
             addThread(1);
         } else if (gt.vel[5] <= 0 && wasMovingV) {
