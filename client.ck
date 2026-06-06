@@ -363,9 +363,9 @@ fun void countDownInstruction_color(dur drawDur, string appendInstruct) {
     addInstruction("1");
     1::second => now;
     if (ID % 2 == 0) {
-        addInstruction_color("Draw one horizontal", appendInstruct, Color.RED);
+        addInstruction_color("Draw one horizontal", appendInstruct, Color.ORANGE);
     } else {
-        addInstruction_color("Draw one vertical", appendInstruct, Color.RED);
+        addInstruction_color("Draw one vertical", appendInstruct, Color.ORANGE);
     }
 }
 
